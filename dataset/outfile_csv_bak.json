@@ -1,0 +1,45 @@
+{
+	"name": "outfile_csv_bak",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureBlobStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"FACTORY": {
+				"type": "string"
+			},
+			"TABLENAME": {
+				"type": "string"
+			},
+			"SYSTEM": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@{concat(dataset().TABLENAME,formatDateTime(addhours(utcnow(),8),'yyyy-MM-dd hh:mi:ss'))}",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@{dataset().FACTORY}/@{dataset().TABLENAME}",
+					"type": "Expression"
+				},
+				"container": {
+					"value": "datalakedata/@{dataset().SYSTEM}",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

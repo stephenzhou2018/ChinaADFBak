@@ -1,0 +1,45 @@
+{
+	"name": "outfile_csv_ShuangYinHao",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureBlobStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"FACTORY": {
+				"type": "string"
+			},
+			"TABLENAME": {
+				"type": "string"
+			},
+			"SYSTEM": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@dataset().TABLENAME",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@{dataset().FACTORY}/@{dataset().TABLENAME}",
+					"type": "Expression"
+				},
+				"container": {
+					"value": "datalakedata/@{dataset().SYSTEM}",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\"",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

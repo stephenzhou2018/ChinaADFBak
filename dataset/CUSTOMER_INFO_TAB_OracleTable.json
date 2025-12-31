@@ -1,0 +1,17 @@
+{
+	"name": "CUSTOMER_INFO_TAB_OracleTable",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "OracleCKPROD",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "OracleTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "IFSAPP",
+			"table": "CUSTOMER_INFO_TAB"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

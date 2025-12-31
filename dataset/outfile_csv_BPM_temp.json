@@ -1,0 +1,48 @@
+{
+	"name": "outfile_csv_BPM_temp",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureBlobStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"FACTORY": {
+				"type": "string"
+			},
+			"TABLENAME": {
+				"type": "string"
+			},
+			"SYSTEM": {
+				"type": "string"
+			},
+			"SCHEMA": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@{dataset().TABLENAME}.csv",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@{dataset().FACTORY}/@{dataset().SCHEMA}/@{dataset().TABLENAME}",
+					"type": "Expression"
+				},
+				"container": {
+					"value": "datalakedata/@{dataset().SYSTEM}",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\"",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

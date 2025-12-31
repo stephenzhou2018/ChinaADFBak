@@ -1,0 +1,17 @@
+{
+	"name": "IFS_CK_Source",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "OracleCKPROD",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "OracleTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "IFSAPP",
+			"table": "C_MATERIAL_SALES_TAB"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
