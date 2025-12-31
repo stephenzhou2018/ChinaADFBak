@@ -1,0 +1,16 @@
+{
+	"name": "OracleMODPROD",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "Oracle",
+		"typeProperties": {
+			"connectionString": "host=172.28.241.208;port=1521;sid=MODPROD;user id=AZURE",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiI2OTVkNDJjOC05YzlmLTQ0MTUtYjQyNy1hMjFmN2U3NjBiMTMiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "cndatagateway",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

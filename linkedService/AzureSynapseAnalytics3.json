@@ -1,0 +1,17 @@
+{
+	"name": "AzureSynapseAnalytics3",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureSqlDW",
+		"typeProperties": {
+			"server": "cndwworkspace.sql.azuresynapse.net",
+			"database": "cnedw1",
+			"encrypt": "mandatory",
+			"trustServerCertificate": false,
+			"authenticationType": "SQL",
+			"userName": "ADSUser",
+			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIkRBVEFGQUNUT1JZQDQxQkQ2MkYxLTE1RkYtNEYzOC1BMkU3LTg4MTUzRDhBQkY2NV9jZTRmZjNhOC0zZGJkLTQ1YjQtYmYwYy02ODc4NDcxZTA2NGYiDQp9"
+		}
+	}
+}
