@@ -1,0 +1,189 @@
+{
+	"name": "41_CK_LEDGER_TRANSACTION_CU_QRY",
+	"properties": {
+		"activities": [
+			{
+				"name": "Source_To_BLOB",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": {
+							"value": "@pipeline().parameters.STGSQL\n",
+							"type": "Expression"
+						},
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "IFS_CK_Source",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "CSV_TO_ODS",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Source_To_BLOB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "TRUNCATE TABLE @{pipeline().parameters.FACTORY}.@{pipeline().parameters.TABLENAME}\n",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"SYSTEM": {
+				"type": "string",
+				"defaultValue": "ifs"
+			},
+			"FACTORY": {
+				"type": "string",
+				"defaultValue": "CK"
+			},
+			"TABLENAME": {
+				"type": "string",
+				"defaultValue": "LEDGER_TRANSACTION_CU_QRY_ETL"
+			},
+			"STGSQL": {
+				"type": "string",
+				"defaultValue": "SELECT company,        series_id,        payment_id,        currency,              trans_id,        identity,        party_type,        party_type_db,        ledger_item_series_id,        ledger_item_id,        ledger_item_version,        installment_id,        invoice_id,        ticked_of_amount,        paid_amount,        used_discount,        currency_difference,        rolledback,        pay_date,        voucher_date,        voucher_type,        voucher_no,        payment_type_code,        payment_type_code_db,        voucher_period,        correction,        interest_date,        name,        write_off_code,        write_off_dom_amount,        write_off_curr_amount,        payment_amount,        invoice_currency,        deduction_curr_amount,        deduction_dom_amount,        payer_identity,        new_diff_item,        customer_id,        objid,        objversion,        curr_rate,  div_factor from IFSAPP.LEDGER_TRANSACTION_CU_QRY_ETL"
+			}
+		},
+		"folder": {
+			"name": "IFS/CKP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T08:59:49Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

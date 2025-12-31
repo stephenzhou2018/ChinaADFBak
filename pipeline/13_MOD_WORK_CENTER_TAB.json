@@ -1,0 +1,704 @@
+{
+	"name": "13_MOD_WORK_CENTER_TAB",
+	"properties": {
+		"activities": [
+			{
+				"name": "SOURCE_TO_BLOB",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": {
+							"value": "@pipeline().parameters.STGSQL",
+							"type": "Expression"
+						},
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "IFS_MOD_Source",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "BLOB_BAK",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SOURCE_TO_BLOB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv_bak",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "BLOB_TO_ODS",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "BLOB_BAK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "TRUNCATE TABLE @{pipeline().parameters.FACTORY}.@{pipeline().parameters.TABLENAME}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "WORK_CENTER_NO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "work_center_no",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CONTRACT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "contract",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DESCRIPTION",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "description",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CALENDAR_ID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "calendar_id",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "UOM",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "uom",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "QUEUE_TIME",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "queue_time",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "UTILIZATION",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "utilization",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "CUM_DEVIATION",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "cum_deviation",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "INPUT_OUTPUT_CODE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "input_output_code",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "INPUT_HRS_WEEK",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "input_hrs_week",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "OUTPUT_HRS_WEEK",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "output_hrs_week",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "MAX_HOURS_PER_ORDER",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "max_hours_per_order",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "UNITS_PER_DAYS",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "units_per_days",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "RESOURCE_DAYS",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "resource_days",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "WORK_CENTER_CODE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "work_center_code",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "USAGE_CODE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "usage_code",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "SCHED_CAPACITY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "sched_capacity",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "SCHED_FINITE_LOCK",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "sched_finite_lock",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "TIME_TYPE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "time_type",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "TIME_REPORTING",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "time_reporting",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PRODUCTION_LINE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "production_line",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DEPARTMENT_NO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "department_no",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "SOURCE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "source",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "NOTE_ID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "note_id",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "NOTE_TEXT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "note_text",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CREATE_DATE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "create_date",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "LAST_ACTIVITY_DATE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "last_activity_date",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "ROWVERSION",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "rowversion",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "RRP_EFFICIENCY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "rrp_efficiency",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "AVERAGE_CAPACITY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "average_capacity",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "DEMONSTRATED_CAPACITY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "demonstrated_capacity",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "COMPANY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "company",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CODE_PART",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "code_part",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "COST_CENTER_ID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "cost_center_id",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "N_SHIFT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "n_shift",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"STGSQL": {
+				"type": "string",
+				"defaultValue": "SELECT REPLACE(work_center_no, CHR(13) || CHR(10), '') AS  work_center_no,        REPLACE(contract, CHR(13) || CHR(10), '') AS        contract,        REPLACE(description, CHR(13) || CHR(10), '') AS     description,        REPLACE(calendar_id, CHR(13) || CHR(10), '') AS     calendar_id,        REPLACE(uom, CHR(13) || CHR(10), '') AS             uom,        queue_time ,        utilization ,        cum_deviation ,        REPLACE(input_output_code, CHR(13) || CHR(10), '') AS       input_output_code,        input_hrs_week ,        output_hrs_week ,        max_hours_per_order ,        units_per_days ,        resource_days ,        REPLACE(work_center_code, CHR(13) || CHR(10), '') AS   work_center_code,        REPLACE(usage_code, CHR(13) || CHR(10), '') AS         usage_code,        REPLACE(sched_capacity, CHR(13) || CHR(10), '') AS     sched_capacity,        REPLACE(sched_finite_lock, CHR(13) || CHR(10), '') AS  sched_finite_lock,        REPLACE(time_type, CHR(13) || CHR(10), '') AS          time_type,        REPLACE(time_reporting, CHR(13) || CHR(10), '') AS    time_reporting,        REPLACE(production_line, CHR(13) || CHR(10), '') AS    production_line,        REPLACE(department_no, CHR(13) || CHR(10), '') AS      department_no,        REPLACE(source, CHR(13) || CHR(10), '') AS            source,        note_id ,        REPLACE(note_text, CHR(13) || CHR(10), '') AS            note_text,        TO_CHAR(create_date, 'yyyy-mm-dd hh:mi:ss')           create_date ,        TO_CHAR(last_activity_date, 'yyyy-mm-dd hh:mi:ss')    last_activity_date ,        TO_CHAR(rowversion, 'yyyy-mm-dd hh:mi:ss') rowversion ,        rrp_efficiency ,        average_capacity ,        demonstrated_capacity ,         REPLACE(company, CHR(13) || CHR(10), '') AS          company,        REPLACE(code_part, CHR(13) || CHR(10), '') AS        code_part,        REPLACE(cost_center_id, CHR(13) || CHR(10), '') AS   cost_center_id,        n_shift          FROM IFSAPP.WORK_CENTER_TAB"
+			},
+			"TABLENAME": {
+				"type": "string",
+				"defaultValue": "WORK_CENTER_TAB"
+			},
+			"FACTORY": {
+				"type": "string",
+				"defaultValue": "MOD"
+			},
+			"SYSTEM": {
+				"type": "string",
+				"defaultValue": "ifs"
+			}
+		},
+		"folder": {
+			"name": "IFS/MODP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T08:58:49Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

@@ -1,0 +1,815 @@
+{
+	"name": "33_CK_PURCHASE_ORDER_INVOICE_TAB_ZL",
+	"properties": {
+		"activities": [
+			{
+				"name": "SourceToBLOB",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SetSTGSQL",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": {
+							"value": "@variables('STGSQL_BATH')",
+							"type": "Expression"
+						},
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "IFS_CK_Source",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "CSV_STG",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "BLOB_BAK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "if   object_id('@{pipeline().parameters.FACTORY}STG.@{pipeline().parameters.TABLENAME}') is not null  \n  truncate table @{pipeline().parameters.FACTORY}STG.@{pipeline().parameters.TABLENAME}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"enableSkipIncompatibleRow": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "ORDER_NO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "order_no",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "LINE_NO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "line_no",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "RELEASE_NO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "release_no",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "RECEIPT_NO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "receipt_no",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "AP_INVOICE_NO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "ap_invoice_no",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PART_NO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "part_no",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CONTRACT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "contract",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CURRENCY_CODE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "currency_code",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "BUY_UNIT_MEAS",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "buy_unit_meas",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "UNIT_MEAS",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "unit_meas",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CONV_FACTOR",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "conv_factor",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "FUNIT_PRICE_PAID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "funit_price_paid",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "UNIT_PRICE_PAID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "unit_price_paid",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CURRENCY_RATE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "currency_rate",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ADDITIONAL_COST",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "additional_cost",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DISCOUNT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "discount",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DATE_ENTERED",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "date_entered",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "QTY_INVOICED",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "qty_invoiced",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PURCHASE_MATCHING_TYPE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "purchase_matching_type",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PRICE_CONV_FACTOR",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "price_conv_factor",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PRICE_UNIT_MEAS",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "price_unit_meas",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "FUNIT_PRICE_DIFF",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "funit_price_diff",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "UNIT_PRICE_DIFF",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "unit_price_diff",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PRICE_DIFFERENCE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "price_difference",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "MATCHED_BY_USER",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "matched_by_user",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "MATCHING_DATE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "matching_date",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "SERIES_ID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "series_id",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "INVOICE_COMPANY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "invoice_company",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ROWVERSION",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "rowversion",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": "@pipeline().parameters.FACTORY",
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@{pipeline().parameters.FACTORY}STG",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "STGToODS",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "CSV_STG",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "@{pipeline().parameters.MERGE}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": "@pipeline().parameters.TABLENAME",
+							"FACTORY": {
+								"value": "@{pipeline().parameters.FACTORY}STG",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "GETMAXBatch",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "delete_2days",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": {
+							"value": "@pipeline().parameters.GetMAXDateSQL",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SOURCE_TemPlate",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "SetSTGSQL",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "GETMAXBatch",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "STGSQL_BATH",
+					"value": {
+						"value": "@{pipeline().parameters.STGSQL}'@{activity('GETMAXBatch').output.firstRow.batch}'",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "BLOB_BAK",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SourceToBLOB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv_bak",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "delete_2days",
+				"description": "由于时间戳数仓中的类型为date 类型,由于执行时间为12点，所以删除前一天的一天",
+				"type": "Script",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "AzureSynapseAnalytics",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "Query",
+							"text": {
+								"value": "delete from @{pipeline().parameters.FACTORY}.@{pipeline().parameters.TABLENAME} where rowversion >=  CONVERT(date, dateadd(hh,-32,GETDATE()))\n\n\n\n",
+								"type": "Expression"
+							}
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			}
+		],
+		"parameters": {
+			"GetMAXDateSQL": {
+				"type": "string",
+				"defaultValue": "SELECT CONVERT(NVARCHAR,ISNULL(max(CAST(ROWVERSION AS DATETIME)) ,'1900-01-01'),20) Batch            FROM [CK].[PURCHASE_ORDER_INVOICE_TAB]"
+			},
+			"TABLENAME": {
+				"type": "string",
+				"defaultValue": "PURCHASE_ORDER_INVOICE_TAB"
+			},
+			"FACTORY": {
+				"type": "string",
+				"defaultValue": "CK"
+			},
+			"SYSTEM": {
+				"type": "string",
+				"defaultValue": "ifs"
+			},
+			"MERGE": {
+				"type": "string",
+				"defaultValue": "  DELETE     FROM [CK].[PURCHASE_ORDER_INVOICE_TAB]     WHERE EXISTS(SELECT TOP 1 1                  FROM  [CKSTG].[PURCHASE_ORDER_INVOICE_TAB]                  WHERE [CKSTG].[PURCHASE_ORDER_INVOICE_TAB].[ORDER_NO] = [CK].[PURCHASE_ORDER_INVOICE_TAB].[ORDER_NO]                  AND   [CKSTG].[PURCHASE_ORDER_INVOICE_TAB].[LINE_NO] = [CK].[PURCHASE_ORDER_INVOICE_TAB].[LINE_NO]                  AND   [CKSTG].[PURCHASE_ORDER_INVOICE_TAB].[RELEASE_NO] = [CK].[PURCHASE_ORDER_INVOICE_TAB].[RELEASE_NO]                  AND   [CKSTG].[PURCHASE_ORDER_INVOICE_TAB].[RECEIPT_NO] = [CK].[PURCHASE_ORDER_INVOICE_TAB].[RECEIPT_NO]                  AND   [CKSTG].[PURCHASE_ORDER_INVOICE_TAB].[AP_INVOICE_NO] = [CK].[PURCHASE_ORDER_INVOICE_TAB].[AP_INVOICE_NO]                   )"
+			},
+			"STGSQL": {
+				"type": "string",
+				"defaultValue": " select        REPLACE(order_no, CHR(13) || CHR (10), '')          order_no,        REPLACE(line_no, CHR(13) || CHR (10), '')           line_no,        REPLACE(release_no, CHR(13) || CHR (10), '')        release_no,        REPLACE(receipt_no, CHR(13) || CHR (10), '')        receipt_no,        REPLACE(ap_invoice_no, CHR(13) || CHR (10), '')     ap_invoice_no,        REPLACE(part_no, CHR(13) || CHR (10), '')           part_no,        REPLACE(contract, CHR(13) || CHR (10), '')          contract,        REPLACE(currency_code, CHR(13) || CHR (10), '')     currency_code,        REPLACE(buy_unit_meas, CHR(13) || CHR (10), '')     buy_unit_meas,        REPLACE(unit_meas, CHR(13) || CHR (10), '')         unit_meas,        REPLACE(conv_factor, CHR(13) || CHR (10), '')       conv_factor,        REPLACE(funit_price_paid, CHR(13) || CHR (10), '')  funit_price_paid,        REPLACE(unit_price_paid, CHR(13) || CHR (10), '')   unit_price_paid,        REPLACE(currency_rate, CHR(13) || CHR (10), '')     currency_rate,        REPLACE(additional_cost, CHR(13) || CHR (10), '')   additional_cost,        REPLACE(discount, CHR(13) || CHR (10), '')          discount,        TO_CHAR(date_entered , 'yyyy-mm-dd hh:mi:ss')             date_entered ,        REPLACE(qty_invoiced, CHR(13) || CHR (10), '')            qty_invoiced,        REPLACE(purchase_matching_type, CHR(13) || CHR (10), '')  purchase_matching_type,        REPLACE(price_conv_factor, CHR(13) || CHR (10), '')       price_conv_factor,        REPLACE(price_unit_meas, CHR(13) || CHR (10), '')         price_unit_meas,        REPLACE(funit_price_diff, CHR(13) || CHR (10), '')        funit_price_diff,        REPLACE(unit_price_diff, CHR(13) || CHR (10), '')         unit_price_diff,        REPLACE(price_difference, CHR(13) || CHR (10), '')        price_difference,        REPLACE(matched_by_user, CHR(13) || CHR (10), '')        matched_by_user,        TO_CHAR(matching_date  , 'yyyy-mm-dd hh:mi:ss')             matching_date  ,        REPLACE(series_id, CHR(13) || CHR (10), '')          series_id,        REPLACE(invoice_company, CHR(13) || CHR (10), '')    invoice_company,        TO_CHAR(rowversion , 'yyyy-mm-dd hh:mi:ss')             rowversion   from IFSAPP.PURCHASE_ORDER_INVOICE_TAB where TO_CHAR(rowversion, 'yyyy-mm-dd hh:mi:ss') >"
+			}
+		},
+		"variables": {
+			"STGSQL_BATH": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"folder": {
+			"name": "IFS/CKP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T08:59:28Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

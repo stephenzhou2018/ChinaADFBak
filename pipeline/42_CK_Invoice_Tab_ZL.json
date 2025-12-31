@@ -1,0 +1,1889 @@
+{
+	"name": "42_CK_Invoice_Tab_ZL",
+	"properties": {
+		"activities": [
+			{
+				"name": "GETMAXBatch",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": {
+							"value": "@pipeline().parameters.GetMAXDateSQL",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SOURCE_TemPlate",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "SourceToBLOB",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SetSTGSQL",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": {
+							"value": "@variables('STGSQL_BATH')",
+							"type": "Expression"
+						},
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "IFS_CK_Source",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "SetSTGSQL",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "GETMAXBatch",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "STGSQL_BATH",
+					"value": {
+						"value": "@{pipeline().parameters.STGSQL}'@{activity('GETMAXBatch').output.firstRow.batch}')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "BLOB_BAK",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SourceToBLOB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"enableSkipIncompatibleRow": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv_bak",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "CSV_STG",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "BLOB_BAK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "if   object_id('@{pipeline().parameters.FACTORY}STG.@{pipeline().parameters.TABLENAME}') is not null  \n  truncate table @{pipeline().parameters.FACTORY}STG.@{pipeline().parameters.TABLENAME}\n",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"tableOption": "autoCreate",
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@{pipeline().parameters.FACTORY}STG",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "STGToODS",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "CSV_STG",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "@{pipeline().parameters.MERGE}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "COMPANY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "COMPANY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "IDENTITY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "IDENTITY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PARTY_TYPE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "PARTY_TYPE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "INVOICE_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "INVOICE_ID",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "ROWVERSION",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "ROWVERSION",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "ROWSTATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "ROWSTATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "SERIES_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "SERIES_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "INVOICE_NO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "INVOICE_NO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "HEAD_DATA",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "HEAD_DATA",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CREATOR",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CREATOR",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "INVOICE_DATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "INVOICE_DATE",
+									"type": "DateTime",
+									"physicalType": "datetime"
+								}
+							},
+							{
+								"source": {
+									"name": "DUE_DATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "DUE_DATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CASH",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CASH",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "COLLECT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "COLLECT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "INT_ALLOWED",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "INT_ALLOWED",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "INVOICE_TYPE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "INVOICE_TYPE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PAY_TERM_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "PAY_TERM_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "AFF_BASE_LEDG_POST",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "AFF_BASE_LEDG_POST",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "AFF_LINE_POST",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "AFF_LINE_POST",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DELIVERY_DATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "DELIVERY_DATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ARRIVAL_DATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "ARRIVAL_DATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "NOTES",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "NOTES",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "SERIES_REFERENCE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "SERIES_REFERENCE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "NUMBER_REFERENCE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "NUMBER_REFERENCE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DELIVERY_IDENTITY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "DELIVERY_IDENTITY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DELIVERY_ADDRESS_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "DELIVERY_ADDRESS_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "INVOICE_ADDRESS_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "INVOICE_ADDRESS_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CREATORS_REFERENCE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CREATORS_REFERENCE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "NATIONAL_BANK_CODE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "NATIONAL_BANK_CODE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CREATION_DATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CREATION_DATE",
+									"type": "DateTime",
+									"physicalType": "datetime"
+								}
+							},
+							{
+								"source": {
+									"name": "PRELIM_CODE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "PRELIM_CODE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PRE_ACC_CODE_STRING",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "PRE_ACC_CODE_STRING",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CURR_RATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CURR_RATE",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "DIV_FACTOR",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "DIV_FACTOR",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "DELIVERY_PARTY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "DELIVERY_PARTY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "JOUR_NO_PRINT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "JOUR_NO_PRINT",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "JOUR_NO_VOUCHER",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "JOUR_NO_VOUCHER",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "PAYMENT_ADDRESS_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "PAYMENT_ADDRESS_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "WAY_PAY_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "WAY_PAY_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CANCELED_TIME",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CANCELED_TIME",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_NO_REF",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "VOUCHER_NO_REF",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_TYPE_REF",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "VOUCHER_TYPE_REF",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_DATE_REF",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "VOUCHER_DATE_REF",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ACCOUNTING_YEAR_REF",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "ACCOUNTING_YEAR_REF",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "WITHHELD_VOUCHER_NO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "WITHHELD_VOUCHER_NO",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "WITHHELD_VOUCHER_TYPE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "WITHHELD_VOUCHER_TYPE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "WITHHELD_ACCOUNTING_YEAR",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "WITHHELD_ACCOUNTING_YEAR",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CODE_A",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CODE_A",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CODE_B",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CODE_B",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CODE_C",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CODE_C",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CODE_D",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CODE_D",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CODE_E",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CODE_E",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CODE_F",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CODE_F",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CODE_G",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CODE_G",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CODE_H",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CODE_H",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CODE_I",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CODE_I",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CODE_J",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CODE_J",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PROJECT_ACTIVITY_ID",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "PROJECT_ACTIVITY_ID",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "PO_REF_NUMBER",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "PO_REF_NUMBER",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PL_PAY_DATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "PL_PAY_DATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "LANGUAGE_CODE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "LANGUAGE_CODE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "NET_CURR_AMOUNT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "NET_CURR_AMOUNT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "VAT_CURR_AMOUNT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "VAT_CURR_AMOUNT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "NET_DOM_AMOUNT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "NET_DOM_AMOUNT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "VAT_DOM_AMOUNT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "VAT_DOM_AMOUNT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CURRENCY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CURRENCY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "C1",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "C1",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "C2",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "C2",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "C3",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "C3",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "C4",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "C4",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "C5",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "C5",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "C6",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "C6",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "C7",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "C7",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "C8",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "C8",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "C9",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "C9",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "C10",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "C10",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "N1",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "N1",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "N2",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "N2",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "N3",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "N3",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "D1",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "D1",
+									"type": "DateTime",
+									"physicalType": "datetime"
+								}
+							},
+							{
+								"source": {
+									"name": "D2",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "D2",
+									"type": "DateTime",
+									"physicalType": "datetime"
+								}
+							},
+							{
+								"source": {
+									"name": "D3",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "D3",
+									"type": "DateTime",
+									"physicalType": "datetime"
+								}
+							},
+							{
+								"source": {
+									"name": "CHK_HANDLING_CODE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CHK_HANDLING_CODE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "SENT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "SENT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "MULTI_COMPANY_INVOICE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "MULTI_COMPANY_INVOICE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ROWTYPE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "ROWTYPE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CREATE_STATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CREATE_STATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "OK_CREATE_VOUCHER",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "OK_CREATE_VOUCHER",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "MULTI_INVOICE_VOUCHER",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "MULTI_INVOICE_VOUCHER",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_FINAL_POST",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "VOUCHER_FINAL_POST",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_VAT_ONLY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "VOUCHER_VAT_ONLY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PROPOSED_VOUCHER_GROUP",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "PROPOSED_VOUCHER_GROUP",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "AUTOMATIC_INVOICE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "AUTOMATIC_INVOICE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "TRANSFER_STATUS",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "TRANSFER_STATUS",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "TRANSFER_ERROR",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "TRANSFER_ERROR",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "TRANSFER_IDENTITY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "TRANSFER_IDENTITY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "INVOICE_FEE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "INVOICE_FEE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "IS_VAT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "IS_VAT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "INVOICE_VERSION",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "INVOICE_VERSION",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PAYER_IDENTITY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "PAYER_IDENTITY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DEDUCTION_GROUP",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "DEDUCTION_GROUP",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "GROSS_UP",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "GROSS_UP",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "NCF_REFERENCE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "NCF_REFERENCE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "BRANCH",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "BRANCH",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PAY_TERM_BASE_DATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "PAY_TERM_BASE_DATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_TEXT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "VOUCHER_TEXT",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CORRECTION",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "CORRECTION",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "JS_INVOICE_TYPE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "JS_INVOICE_TYPE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "JS_SENDED",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "JS_SENDED",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "JS_RETURNED",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "JS_RETURNED",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "JS_INVOICE_NO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "JS_INVOICE_NO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "JS_VIRTUAL_INVOICE_NO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "JS_VIRTUAL_INVOICE_NO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "JS_MEMO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "JS_MEMO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "TAX_CURR_RATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "TAX_CURR_RATE",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "PRICE_INCLUSIVE_TAX",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "PRICE_INCLUSIVE_TAX",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "N_DOWNLOAD_TIMES",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "N_DOWNLOAD_TIMES",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "N_DOWNLOAD_DATE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "N_DOWNLOAD_DATE",
+									"type": "DateTime",
+									"physicalType": "datetime"
+								}
+							},
+							{
+								"source": {
+									"name": "N_PRICE_FLAG",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "N_PRICE_FLAG",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "N_RECEIVE_NO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "N_RECEIVE_NO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "N_ACCEPT_REPORT_NO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "N_ACCEPT_REPORT_NO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "BICREATETIME",
+									"type": "String",
+									"physicalType": "nvarchar"
+								},
+								"sink": {
+									"name": "BICreateTime",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@{pipeline().parameters.FACTORY}STG",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"GetMAXDateSQL": {
+				"type": "string",
+				"defaultValue": "SELECT CONVERT(NVARCHAR(10),ISNULL(MAX(BICreateTime),'1900-01-02'),23) batch FROM [CK].[INVOICE_TAB]"
+			},
+			"STGSQL": {
+				"type": "string",
+				"defaultValue": "SELECT replace(COMPANY, CHR (13) || CHR (10), '') COMPANY , \t   replace(IDENTITY, CHR (13) || CHR (10), '') IDENTITY , \t   replace(PARTY_TYPE, CHR (13) || CHR (10), '') PARTY_TYPE , \t   INVOICE_ID , \t   ROWVERSION , \t   replace(ROWSTATE, CHR (13) || CHR (10), '') ROWSTATE , \t   replace(SERIES_ID, CHR (13) || CHR (10), '') SERIES_ID , \t   replace(INVOICE_NO, CHR (13) || CHR (10), '') INVOICE_NO , \t   replace(HEAD_DATA, CHR (13) || CHR (10), '') HEAD_DATA , \t   replace(CREATOR, CHR (13) || CHR (10), '') CREATOR , \t   INVOICE_DATE , \t   TO_CHAR(DUE_DATE,'yyyy-mm-dd') DUE_DATE , \t   replace(CASH, CHR (13) || CHR (10), '') CASH , \t   replace(COLLECT, CHR (13) || CHR (10), '') COLLECT , \t   replace(INT_ALLOWED, CHR (13) || CHR (10), '') INT_ALLOWED , \t   replace(INVOICE_TYPE, CHR (13) || CHR (10), '') INVOICE_TYPE , \t   replace(PAY_TERM_ID, CHR (13) || CHR (10), '') PAY_TERM_ID , \t   replace(AFF_BASE_LEDG_POST, CHR (13) || CHR (10), '') AFF_BASE_LEDG_POST , \t   replace(AFF_LINE_POST, CHR (13) || CHR (10), '') AFF_LINE_POST , \t   TO_CHAR(DELIVERY_DATE,'yyyy-mm-dd hh:mi:ss') DELIVERY_DATE , \t   TO_CHAR(ARRIVAL_DATE,'yyyy-mm-dd') ARRIVAL_DATE , \t   replace(NOTES, CHR (13) || CHR (10), '') NOTES , \t   replace(SERIES_REFERENCE, CHR (13) || CHR (10), '') SERIES_REFERENCE , \t   replace(NUMBER_REFERENCE, CHR (13) || CHR (10), '') NUMBER_REFERENCE , \t   replace(DELIVERY_IDENTITY, CHR (13) || CHR (10), '') DELIVERY_IDENTITY , \t   replace(DELIVERY_ADDRESS_ID, CHR (13) || CHR (10), '') DELIVERY_ADDRESS_ID , \t   replace(INVOICE_ADDRESS_ID, CHR (13) || CHR (10), '') INVOICE_ADDRESS_ID , \t   replace(CREATORS_REFERENCE, CHR (13) || CHR (10), '') CREATORS_REFERENCE , \t   replace(NATIONAL_BANK_CODE, CHR (13) || CHR (10), '') NATIONAL_BANK_CODE , \t   CREATION_DATE ,replace(PRELIM_CODE, CHR (13) || CHR (10), '') PRELIM_CODE , \t   replace(PRE_ACC_CODE_STRING, CHR (13) || CHR (10), '') PRE_ACC_CODE_STRING , \t   CURR_RATE , \t   DIV_FACTOR , \t   replace(DELIVERY_PARTY, CHR (13) || CHR (10), '') DELIVERY_PARTY , \t   JOUR_NO_PRINT , \t   JOUR_NO_VOUCHER , \t   replace(PAYMENT_ADDRESS_ID, CHR (13) || CHR (10), '') PAYMENT_ADDRESS_ID , \t   replace(WAY_PAY_ID, CHR (13) || CHR (10), '') WAY_PAY_ID , \t   TO_CHAR(CANCELED_TIME,'yyyy-mm-dd') CANCELED_TIME , \t   TO_CHAR(VOUCHER_NO_REF) VOUCHER_NO_REF , \t   replace(VOUCHER_TYPE_REF, CHR (13) || CHR (10), '') VOUCHER_TYPE_REF , \t   TO_CHAR(VOUCHER_DATE_REF,'yyyy-mm-dd') VOUCHER_DATE_REF , \t   ACCOUNTING_YEAR_REF , \t   WITHHELD_VOUCHER_NO , \t   replace(WITHHELD_VOUCHER_TYPE, CHR (13) || CHR (10), '') WITHHELD_VOUCHER_TYPE , \t   WITHHELD_ACCOUNTING_YEAR ,replace(CODE_A, CHR (13) || CHR (10), '') CODE_A , \t   replace(CODE_B, CHR (13) || CHR (10), '') CODE_B , \t   replace(CODE_C, CHR (13) || CHR (10), '') CODE_C , \t   replace(CODE_D, CHR (13) || CHR (10), '') CODE_D , \t   replace(CODE_E, CHR (13) || CHR (10), '') CODE_E , \t   replace(CODE_F, CHR (13) || CHR (10), '') CODE_F , \t   replace(CODE_G, CHR (13) || CHR (10), '') CODE_G , \t   replace(CODE_H, CHR (13) || CHR (10), '') CODE_H , \t   replace(CODE_I, CHR (13) || CHR (10), '') CODE_I , \t   replace(CODE_J, CHR (13) || CHR (10), '') CODE_J , \t   PROJECT_ACTIVITY_ID ,replace(PO_REF_NUMBER, CHR (13) || CHR (10), '') PO_REF_NUMBER , \t   TO_CHAR(PL_PAY_DATE,'yyyy-mm-dd') PL_PAY_DATE , \t   replace(LANGUAGE_CODE, CHR (13) || CHR (10), '') LANGUAGE_CODE , \t   TO_CHAR(NET_CURR_AMOUNT) NET_CURR_AMOUNT , \t   TO_CHAR(VAT_CURR_AMOUNT) VAT_CURR_AMOUNT , \t   TO_CHAR(NET_DOM_AMOUNT) NET_DOM_AMOUNT , \t   TO_CHAR(VAT_DOM_AMOUNT) VAT_DOM_AMOUNT , \t   replace(CURRENCY, CHR (13) || CHR (10), '') CURRENCY , \t   replace(C1, CHR (13) || CHR (10), '') C1 , \t   replace(C2, CHR (13) || CHR (10), '') C2 , \t   replace(C3, CHR (13) || CHR (10), '') C3 , \t   replace(C4, CHR (13) || CHR (10), '') C4 , \t   replace(C5, CHR (13) || CHR (10), '') C5 , \t   replace(C6, CHR (13) || CHR (10), '') C6 , \t   replace(C7, CHR (13) || CHR (10), '') C7 , \t   replace(C8, CHR (13) || CHR (10), '') C8 , \t   replace(C9, CHR (13) || CHR (10), '') C9 , \t   replace(C10, CHR (13) || CHR (10), '') C10 , \t   N1 ,N2 ,N3 ,D1 ,D2 ,D3 , \t   replace(CHK_HANDLING_CODE, CHR (13) || CHR (10), '') CHK_HANDLING_CODE , \t   replace(SENT, CHR (13) || CHR (10), '') SENT , \t   replace(MULTI_COMPANY_INVOICE, CHR (13) || CHR (10), '') MULTI_COMPANY_INVOICE , \t   replace(ROWTYPE, CHR (13) || CHR (10), '') ROWTYPE , \t   replace(CREATE_STATE, CHR (13) || CHR (10), '') CREATE_STATE , \t   replace(OK_CREATE_VOUCHER, CHR (13) || CHR (10), '') OK_CREATE_VOUCHER , \t   replace(MULTI_INVOICE_VOUCHER, CHR (13) || CHR (10), '') MULTI_INVOICE_VOUCHER , \t   replace(VOUCHER_FINAL_POST, CHR (13) || CHR (10), '') VOUCHER_FINAL_POST , \t   replace(VOUCHER_VAT_ONLY, CHR (13) || CHR (10), '') VOUCHER_VAT_ONLY , \t   replace(PROPOSED_VOUCHER_GROUP, CHR (13) || CHR (10), '') PROPOSED_VOUCHER_GROUP , \t   replace(AUTOMATIC_INVOICE, CHR (13) || CHR (10), '') AUTOMATIC_INVOICE , \t   replace(TRANSFER_STATUS, CHR (13) || CHR (10), '') TRANSFER_STATUS , \t   replace(TRANSFER_ERROR, CHR (13) || CHR (10), '') TRANSFER_ERROR , \t   replace(TRANSFER_IDENTITY, CHR (13) || CHR (10), '') TRANSFER_IDENTITY , \t   replace(INVOICE_FEE, CHR (13) || CHR (10), '') INVOICE_FEE , \t   replace(IS_VAT, CHR (13) || CHR (10), '') IS_VAT , \t   TO_CHAR(INVOICE_VERSION) INVOICE_VERSION , \t   replace(PAYER_IDENTITY, CHR (13) || CHR (10), '') PAYER_IDENTITY , \t   replace(DEDUCTION_GROUP, CHR (13) || CHR (10), '') DEDUCTION_GROUP , \t   replace(GROSS_UP, CHR (13) || CHR (10), '') GROSS_UP , \t   replace(NCF_REFERENCE, CHR (13) || CHR (10), '') NCF_REFERENCE , \t   replace(BRANCH, CHR (13) || CHR (10), '') BRANCH , \t   TO_CHAR(PAY_TERM_BASE_DATE,'yyyy-mm-dd') PAY_TERM_BASE_DATE , \t   replace(replace(VOUCHER_TEXT, CHR (13) || CHR (10), ''),'\\','/') VOUCHER_TEXT , \t   replace(CORRECTION, CHR (13) || CHR (10), '') CORRECTION , \t   replace(JS_INVOICE_TYPE, CHR (13) || CHR (10), '') JS_INVOICE_TYPE , \t   replace(JS_SENDED, CHR (13) || CHR (10), '') JS_SENDED , \t   replace(JS_RETURNED, CHR (13) || CHR (10), '') JS_RETURNED , \t   replace(JS_INVOICE_NO, CHR (13) || CHR (10), '') JS_INVOICE_NO , \t   replace(JS_VIRTUAL_INVOICE_NO, CHR (13) || CHR (10), '') JS_VIRTUAL_INVOICE_NO , \t   replace(JS_MEMO, CHR (13) || CHR (10), '') JS_MEMO , \t   TAX_CURR_RATE , \t   replace(PRICE_INCLUSIVE_TAX, CHR (13) || CHR (10), '') PRICE_INCLUSIVE_TAX , \t   N_DOWNLOAD_TIMES , \t   N_DOWNLOAD_DATE , \t   replace(N_PRICE_FLAG, CHR (13) || CHR (10), '') N_PRICE_FLAG , \t   replace(N_RECEIVE_NO, CHR (13) || CHR (10), '') N_RECEIVE_NO , \t   N_ACCEPT_REPORT_NO   ,TO_CHAR(SYSDATE,'yyyy-mm-dd') BICreateTime FROM IFSAPP.INVOICE_TAB col where exists (select 1 from IFSAPP.HISTORY_LOG_TAB hl where  substr(substr(hl.keys,INSTR(hl.keys,'COMPANY') + LENGTH('COMPANY')+1,+99),0,INSTR(substr(hl.keys,INSTR(hl.keys,'COMPANY') + LENGTH('COMPANY')+1,+99),'^')-1) = col.COMPANY and substr(substr(hl.keys,INSTR(hl.keys,'INVOICE_ID') + LENGTH('INVOICE_ID')+1,+99),0,INSTR(substr(hl.keys,INSTR(hl.keys,'INVOICE_ID') + LENGTH('INVOICE_ID')+1,+99),'^')-1) = col.INVOICE_ID  and substr(substr(hl.keys,INSTR(hl.keys,'IDENTITY') + LENGTH('IDENTITY')+1,+99),0,INSTR(substr(hl.keys,INSTR(hl.keys,'IDENTITY') + LENGTH('IDENTITY')+1,+99),'^')-1) = col.IDENTITY  and substr(substr(hl.keys,INSTR(hl.keys,'PARTY_TYPE') + LENGTH('PARTY_TYPE')+1,+99),0,INSTR(substr(hl.keys,INSTR(hl.keys,'PARTY_TYPE') + LENGTH('PARTY_TYPE')+1,+99),'^')-1) = col.PARTY_TYPE  and hl.table_name = 'INVOICE_TAB' AND hl.LU_NAME  = 'Invoice' and (hl.history_type = '1' or hl.history_type = '2') and TO_CHAR(hl.time_stamp,'yyyy-mm-dd') >= "
+			},
+			"TABLENAME": {
+				"type": "string",
+				"defaultValue": "Invoice_Tab"
+			},
+			"FACTORY": {
+				"type": "string",
+				"defaultValue": "CK"
+			},
+			"SYSTEM": {
+				"type": "string",
+				"defaultValue": "ifs"
+			},
+			"MERGE": {
+				"type": "string",
+				"defaultValue": "DELETE FROM [CK].[INVOICE_TAB] WHERE EXISTS  (SELECT TOP 1 1 FROM [CKSTG].[INVOICE_TAB]  WHERE   [CKSTG].[INVOICE_TAB].[COMPANY] = [CK].[INVOICE_TAB].[COMPANY]   AND [CKSTG].[INVOICE_TAB].[IDENTITY] = [CK].[INVOICE_TAB].[IDENTITY]   AND [CKSTG].[INVOICE_TAB].[INVOICE_ID] = [CK].[INVOICE_TAB].[INVOICE_ID]  AND [CKSTG].[INVOICE_TAB].[PARTY_TYPE] = [CK].[INVOICE_TAB].[PARTY_TYPE])"
+			}
+		},
+		"variables": {
+			"STGSQL_BATH": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"folder": {
+			"name": "IFS/CKP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T09:00:09Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

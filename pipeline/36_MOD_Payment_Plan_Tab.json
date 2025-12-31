@@ -1,0 +1,289 @@
+{
+	"name": "36_MOD_Payment_Plan_Tab",
+	"properties": {
+		"activities": [
+			{
+				"name": "CSV_STG",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "BLOB_BAK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "TRUNCATE TABLE @{pipeline().parameters.FACTORY}.@{pipeline().parameters.TABLENAME}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@{pipeline().parameters.FACTORY}",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "SourceToBLOB",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": {
+							"value": "@pipeline().parameters.STGSQL",
+							"type": "Expression"
+						},
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "IFS_MOD_Source",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "BLOB_BAK",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SourceToBLOB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"enableSkipIncompatibleRow": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv_bak",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"STGSQL": {
+				"type": "string",
+				"defaultValue": "SELECT  replace(COMPANY, CHR (13) || CHR (10), '') COMPANY ,replace(IDENTITY, CHR (13) || CHR (10), '') IDENTITY ,replace(PARTY_TYPE, CHR (13) || CHR (10), '') PARTY_TYPE ,INVOICE_ID ,INSTALLMENT_ID ,DUE_DATE ,ROWVERSION ,replace(CURR_CODE, CHR (13) || CHR (10), '') CURR_CODE ,CURR_RATE ,DIV_FACTOR ,CURR_AMOUNT ,DOM_AMOUNT ,CLEARED_CURR_AMOUNT ,CLEARED_DOM_AMOUNT ,PAYMENT_DATE ,replace(PAYMENT_METHOD, CHR (13) || CHR (10), '') PAYMENT_METHOD ,replace(PAYMENT_ADDRESS_ID, CHR (13) || CHR (10), '') PAYMENT_ADDRESS_ID ,replace(VAT_DISTRIBUTION, CHR (13) || CHR (10), '') VAT_DISTRIBUTION ,replace(ROWSTATE, CHR (13) || CHR (10), '') ROWSTATE ,replace(AUTH_ID, CHR (13) || CHR (10), '') AUTH_ID ,replace(AUTHORIZED, CHR (13) || CHR (10), '') AUTHORIZED ,TAX_WITHHELD_CURR_AMOUNT ,TAX_WITHHELD_DOM_AMOUNT ,C_EXTRACT_COMP_NUM FROM IFSAPP.PAYMENT_PLAN_TAB"
+			},
+			"TABLENAME": {
+				"type": "string",
+				"defaultValue": "PAYMENT_PLAN_TAB"
+			},
+			"FACTORY": {
+				"type": "string",
+				"defaultValue": "MOD"
+			},
+			"SYSTEM": {
+				"type": "string",
+				"defaultValue": "ifs"
+			}
+		},
+		"variables": {
+			"STGSQL_BATH": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"folder": {
+			"name": "IFS/MODP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T08:59:28Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

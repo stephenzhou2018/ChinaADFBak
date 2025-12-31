@@ -1,0 +1,400 @@
+{
+	"name": "11_IFS_CK_2",
+	"properties": {
+		"description": "每个执行管道只能放40个，11_IFS_CK 达到了上限制，所以建这个11_IFS_CK_2",
+		"activities": [
+			{
+				"name": "11_CK_CURRENCY_RATE_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "11_CK_CURRENCY_RATE_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "12_CK_WORK_CENTER_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "11_CK_CURRENCY_RATE_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "12_CK_WORK_CENTER_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "14_CK_VOUCHER_TYPE_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "12_CK_WORK_CENTER_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "14_CK_VOUCHER_TYPE_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "15_CK_VOUCHER_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "14_CK_VOUCHER_TYPE_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "15_CK_VOUCHER_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "16_CK_VOUCHER_ROW_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "15_CK_VOUCHER_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "16_CK_VOUCHER_ROW_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "17_CK_SUPPLIER_INFO_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "17_CK_SUPPLIER_INFO_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "18_CK_SITE_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "17_CK_SUPPLIER_INFO_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "18_CK_SITE_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "19_CK_SHOP_ORDER_PROP_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "18_CK_SITE_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "19_CK_SHOP_ORDER_PROP_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "20_CK_SHOP_ORDER_OPERATION_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "19_CK_SHOP_ORDER_PROP_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "20_CK_SHOP_ORDER_OPERATION_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "21_CK_SHOP_ORD_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "21_CK_SHOP_ORD_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "22_CK_Sales_Part_Tab",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "21_CK_SHOP_ORD_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "22_CK_Sales_Part_Tab",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "24_CK_RETURN_MATERIAL_REASON_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "23_CK_RETURN_MATERIAL_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "24_CK_RETURN_MATERIAL_REASON_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "23_CK_RETURN_MATERIAL_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "22_CK_Sales_Part_Tab",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "23_CK_RETURN_MATERIAL_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "25_CK_RETURN_MATERIAL_LINE_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "24_CK_RETURN_MATERIAL_REASON_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "25_CK_RETURN_MATERIAL_LINE_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "26_CK_PURCHASE_REQUISITIONER_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "26_CK_PURCHASE_REQUISITIONER_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "27_CK_PURCHASE_REQUISITION_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "26_CK_PURCHASE_REQUISITIONER_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "27_CK_PURCHASE_REQUISITION_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "28_CK_PURCHASE_REQ_LINE_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "27_CK_PURCHASE_REQUISITION_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "28_CK_PURCHASE_REQ_LINE_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "100_CK_ACCOUNTING_BALANCE_AUTH_ZL",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "28_CK_PURCHASE_REQ_LINE_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "100_CK_ACCOUNTING_BALANCE_AUTH_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"folder": {
+			"name": "POC_ETL/DISPATCH"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T09:01:57Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

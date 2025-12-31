@@ -1,0 +1,1022 @@
+{
+	"name": "18_CK_SITE_TAB",
+	"properties": {
+		"activities": [
+			{
+				"name": "Source_To_BLOB",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": {
+							"value": "@pipeline().parameters.STGSQL\n",
+							"type": "Expression"
+						},
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "CONTRACT",
+									"type": "String"
+								},
+								"sink": {
+									"name": "CONTRACT",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "DELIVERY_ADDRESS",
+									"type": "String"
+								},
+								"sink": {
+									"name": "DELIVERY_ADDRESS",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "CONTRACT_REF",
+									"type": "String"
+								},
+								"sink": {
+									"name": "CONTRACT_REF",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "COMPANY",
+									"type": "String"
+								},
+								"sink": {
+									"name": "COMPANY",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "DIST_CALENDAR_ID",
+									"type": "String"
+								},
+								"sink": {
+									"name": "DIST_CALENDAR_ID",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "MANUF_CALENDAR_ID",
+									"type": "String"
+								},
+								"sink": {
+									"name": "MANUF_CALENDAR_ID",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "OFFSET",
+									"type": "String"
+								},
+								"sink": {
+									"name": "OFFSET",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "INVENTORY_VALUE_METHOD",
+									"type": "String"
+								},
+								"sink": {
+									"name": "INVENTORY_VALUE_METHOD",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "NEGATIVE_ON_HAND",
+									"type": "String"
+								},
+								"sink": {
+									"name": "NEGATIVE_ON_HAND",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "PURCH_COMP_METHOD",
+									"type": "String"
+								},
+								"sink": {
+									"name": "PURCH_COMP_METHOD",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "STRUCTURE_UPDATE",
+									"type": "String"
+								},
+								"sink": {
+									"name": "STRUCTURE_UPDATE",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "COUNT_DIFF_AMOUNT",
+									"type": "String"
+								},
+								"sink": {
+									"name": "COUNT_DIFF_AMOUNT",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "COUNT_DIFF_PERCENTAGE",
+									"type": "String"
+								},
+								"sink": {
+									"name": "COUNT_DIFF_PERCENTAGE",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "PICKING_LEADTIME",
+									"type": "String"
+								},
+								"sink": {
+									"name": "PICKING_LEADTIME",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "STRUCTURE_STATE_DEFAULT",
+									"type": "String"
+								},
+								"sink": {
+									"name": "STRUCTURE_STATE_DEFAULT",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "ACTUAL_COST",
+									"type": "String"
+								},
+								"sink": {
+									"name": "ACTUAL_COST",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "DISPOSITION_OF_QUOTATION",
+									"type": "String"
+								},
+								"sink": {
+									"name": "DISPOSITION_OF_QUOTATION",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "CUST_ORDER_PRICING_METHOD",
+									"type": "String"
+								},
+								"sink": {
+									"name": "CUST_ORDER_PRICING_METHOD",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "LAST_ACTUAL_COST_CALC",
+									"type": "String"
+								},
+								"sink": {
+									"name": "LAST_ACTUAL_COST_CALC",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "CUST_ORDER_DISCOUNT_METHOD",
+									"type": "String"
+								},
+								"sink": {
+									"name": "CUST_ORDER_DISCOUNT_METHOD",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "BRANCH",
+									"type": "String"
+								},
+								"sink": {
+									"name": "BRANCH",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "MESSAGE_RECEIVER",
+									"type": "String"
+								},
+								"sink": {
+									"name": "MESSAGE_RECEIVER",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "DISP_COND_CUSTOMER_ORDER",
+									"type": "String"
+								},
+								"sink": {
+									"name": "DISP_COND_CUSTOMER_ORDER",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "DISP_COND_PURCHASE_ORDER",
+									"type": "String"
+								},
+								"sink": {
+									"name": "DISP_COND_PURCHASE_ORDER",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "DISP_COND_WORK_ORDER",
+									"type": "String"
+								},
+								"sink": {
+									"name": "DISP_COND_WORK_ORDER",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "VIM_MRO_USAGE",
+									"type": "String"
+								},
+								"sink": {
+									"name": "VIM_MRO_USAGE",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "EXT_SERVICE_COST_METHOD",
+									"type": "String"
+								},
+								"sink": {
+									"name": "EXT_SERVICE_COST_METHOD",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "ROWVERSION",
+									"type": "String"
+								},
+								"sink": {
+									"name": "ROWVERSION",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "AVG_WORK_DAYS_PER_WEEK",
+									"type": "String"
+								},
+								"sink": {
+									"name": "AVG_WORK_DAYS_PER_WEEK",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "DOCUMENT_ADDRESS_ID",
+									"type": "String"
+								},
+								"sink": {
+									"name": "DOCUMENT_ADDRESS_ID",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "COUNTRY_CODE",
+									"type": "String"
+								},
+								"sink": {
+									"name": "COUNTRY_CODE",
+									"type": "String",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "REGION_CODE",
+									"type": "String"
+								},
+								"sink": {
+									"name": "REGION_CODE",
+									"type": "String",
+									"physicalType": "String"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "IFS_CK_Source",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "BOLB_BAK",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Source_To_BLOB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv_bak",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "CSV_TO_ODS",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "BOLB_BAK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "TRUNCATE TABLE @{pipeline().parameters.FACTORY}.@{pipeline().parameters.TABLENAME}\n",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "CONTRACT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "contract",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DELIVERY_ADDRESS",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "delivery_address",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CONTRACT_REF",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "contract_ref",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "COMPANY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "company",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DIST_CALENDAR_ID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "dist_calendar_id",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "MANUF_CALENDAR_ID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "manuf_calendar_id",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "OFFSET",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "offset",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "INVENTORY_VALUE_METHOD",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "inventory_value_method",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "NEGATIVE_ON_HAND",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "negative_on_hand",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PURCH_COMP_METHOD",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "purch_comp_method",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "STRUCTURE_UPDATE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "structure_update",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "COUNT_DIFF_AMOUNT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "count_diff_amount",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "COUNT_DIFF_PERCENTAGE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "count_diff_percentage",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PICKING_LEADTIME",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "picking_leadtime",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "STRUCTURE_STATE_DEFAULT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "structure_state_default",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ACTUAL_COST",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "actual_cost",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DISPOSITION_OF_QUOTATION",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "disposition_of_quotation",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CUST_ORDER_PRICING_METHOD",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "cust_order_pricing_method",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "LAST_ACTUAL_COST_CALC",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "last_actual_cost_calc",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "CUST_ORDER_DISCOUNT_METHOD",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "cust_order_discount_method",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "BRANCH",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "branch",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "MESSAGE_RECEIVER",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "message_receiver",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DISP_COND_CUSTOMER_ORDER",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "disp_cond_customer_order",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DISP_COND_PURCHASE_ORDER",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "disp_cond_purchase_order",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DISP_COND_WORK_ORDER",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "disp_cond_work_order",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "VIM_MRO_USAGE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "vim_mro_usage",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "EXT_SERVICE_COST_METHOD",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "ext_service_cost_method",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ROWVERSION",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "rowversion",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "AVG_WORK_DAYS_PER_WEEK",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "avg_work_days_per_week",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DOCUMENT_ADDRESS_ID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "document_address_id",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "COUNTRY_CODE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "country_code",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "REGION_CODE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "region_code",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"STGSQL": {
+				"type": "string",
+				"defaultValue": "SELECT REPLACE(contract, CHR(13) || CHR(10), '') AS contract,        REPLACE(delivery_address, CHR(13) || CHR(10), '') AS delivery_address,        REPLACE(contract_ref, CHR(13) || CHR(10), '') AS contract_ref,        REPLACE(company, CHR(13) || CHR(10), '') AS company,        REPLACE(dist_calendar_id, CHR(13) || CHR(10), '') AS dist_calendar_id,        REPLACE(manuf_calendar_id, CHR(13) || CHR(10), '') AS manuf_calendar_id,        REPLACE(offset, CHR(13) || CHR(10), '') AS offset,        REPLACE(inventory_value_method, CHR(13) || CHR(10), '') AS inventory_value_method,        REPLACE(negative_on_hand, CHR(13) || CHR(10), '') AS negative_on_hand,        REPLACE(purch_comp_method, CHR(13) || CHR(10), '') AS purch_comp_method,        REPLACE(structure_update, CHR(13) || CHR(10), '') AS structure_update,        REPLACE(count_diff_amount, CHR(13) || CHR(10), '') AS count_diff_amount,        REPLACE(count_diff_percentage, CHR(13) || CHR(10), '') AS count_diff_percentage,        REPLACE(picking_leadtime, CHR(13) || CHR(10), '') AS picking_leadtime,        REPLACE(structure_state_default, CHR(13) || CHR(10), '') AS structure_state_default,        REPLACE(actual_cost, CHR(13) || CHR(10), '') AS actual_cost,        REPLACE(disposition_of_quotation, CHR(13) || CHR(10), '') AS disposition_of_quotation,        REPLACE(cust_order_pricing_method, CHR(13) || CHR(10), '') AS cust_order_pricing_method,        TO_CHAR(last_actual_cost_calc, 'yyyy-mm-dd hh:mi:ss') last_actual_cost_calc,        REPLACE(cust_order_discount_method, CHR(13) || CHR(10), '') AS cust_order_discount_method,        REPLACE(branch, CHR(13) || CHR(10), '') AS branch,        REPLACE(message_receiver, CHR(13) || CHR(10), '') AS message_receiver,        REPLACE(disp_cond_customer_order, CHR(13) || CHR(10), '') AS disp_cond_customer_order,        REPLACE(disp_cond_purchase_order, CHR(13) || CHR(10), '') AS disp_cond_purchase_order,        REPLACE(disp_cond_work_order, CHR(13) || CHR(10), '') AS disp_cond_work_order,        REPLACE(vim_mro_usage, CHR(13) || CHR(10), '') AS vim_mro_usage,        REPLACE(ext_service_cost_method, CHR(13) || CHR(10), '') AS ext_service_cost_method,        TO_CHAR(rowversion, 'yyyy-mm-dd hh:mi:ss') rowversion,        REPLACE(avg_work_days_per_week, CHR(13) || CHR(10), '') AS avg_work_days_per_week,        REPLACE(document_address_id, CHR(13) || CHR(10), '') AS document_address_id,        REPLACE(country_code, CHR(13) || CHR(10), '') AS country_code,        REPLACE(region_code, CHR(13) || CHR(10), '') AS region_code   FROM IFSAPP.SITE_TAB"
+			},
+			"TABLENAME": {
+				"type": "string",
+				"defaultValue": "SITE_TAB"
+			},
+			"FACTORY": {
+				"type": "string",
+				"defaultValue": "CK"
+			},
+			"SYSTEM": {
+				"type": "string",
+				"defaultValue": "ifs"
+			}
+		},
+		"folder": {
+			"name": "IFS/CKP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T08:58:49Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

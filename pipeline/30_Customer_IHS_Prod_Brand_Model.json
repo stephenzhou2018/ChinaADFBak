@@ -1,0 +1,182 @@
+{
+	"name": "30_Customer_IHS_Prod_Brand_Model",
+	"properties": {
+		"activities": [
+			{
+				"name": "CSV_ODS",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "GetName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"additionalColumns": [
+							{
+								"name": "File_Tag",
+								"value": "$$FILENAME"
+							},
+							{
+								"name": "Data_Load_Time",
+								"value": {
+									"value": "@formatDateTime(addToTime(pipeline().TriggerTime,8,'Hour'),'yyyy-MM-dd HH:mm:ss')",
+									"type": "Expression"
+								}
+							}
+						],
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "if   object_id('@{pipeline().parameters.SYSTEM}.@{pipeline().parameters.TABLENAME}') is not null  \n  truncate table @{pipeline().parameters.SYSTEM}.@{pipeline().parameters.TABLENAME}\n",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "Production_Brand",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "Production_Brand",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "Production_Nameplate",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "Production_Nameplate",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Commercial_CSV_ZL_3",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@activity('GetName').output.firstRow.file_name",
+								"type": "Expression"
+							},
+							"Split": {
+								"value": "@pipeline().parameters.Split",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@{pipeline().parameters.TABLENAME}",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "GetName",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": {
+							"value": "select case when '@{pipeline().parameters.sourceFile}'='1'\nthen concat('@{pipeline().parameters.TABLENAME}_',max(CONVERT(NVARCHAR(8),DATEADD(DAY,-1,CONVERT(DATE,today,112)),112)),'.csv')\nelse '@{pipeline().parameters.sourceFile}'\nend as file_name\nfrom dwd.config_qad_etl_date\n",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SOURCE_TemPlate",
+						"type": "DatasetReference"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"TABLENAME": {
+				"type": "string",
+				"defaultValue": "Customer_IHS_Prod_Brand_Model"
+			},
+			"SYSTEM": {
+				"type": "string",
+				"defaultValue": "Commercial"
+			},
+			"Split": {
+				"type": "string",
+				"defaultValue": ","
+			},
+			"sourceFile": {
+				"type": "string",
+				"defaultValue": "Customer_IHS_Prod_Brand_Model.csv"
+			}
+		},
+		"folder": {
+			"name": "Commercial"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T08:59:27Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

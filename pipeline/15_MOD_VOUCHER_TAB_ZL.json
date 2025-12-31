@@ -1,0 +1,874 @@
+{
+	"name": "15_MOD_VOUCHER_TAB_ZL",
+	"properties": {
+		"activities": [
+			{
+				"name": "GETMAXBatch",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "delete_today",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": {
+							"value": "@pipeline().parameters.GetMAXDateSQL",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SOURCE_TemPlate",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "SetSTGSQL",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "GETMAXBatch",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "STGSQL_BATH",
+					"value": {
+						"value": "@{pipeline().parameters.STGSQL}'@{activity('GETMAXBatch').output.firstRow.batch}'\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "STG_TO_ODS",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "CSV_STG",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "@{pipeline().parameters.MERGE}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": "@{pipeline().parameters.FACTORY}STG"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "CSV_STG",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "BLOB_BAK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "if   object_id('@{pipeline().parameters.FACTORY}STG.@{pipeline().parameters.TABLENAME}') is not null  \n  truncate table @{pipeline().parameters.FACTORY}STG.@{pipeline().parameters.TABLENAME}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "COMPANY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "company",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ACCOUNTING_YEAR",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "accounting_year",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_NO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "voucher_no",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_TYPE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "voucher_type",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_DATE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "voucher_date",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "USER_GROUP",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "user_group",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ACCOUNTING_PERIOD",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "accounting_period",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "DATE_REG",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "date_reg",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "USERID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "userid",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CORRECTION",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "correction",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ACCOUNTING_TEXT_ID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "accounting_text_id",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "UPDATE_ERROR",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "update_error",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "INTERNAL_SEQ_NUMBER",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "internal_seq_number",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_TEXT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "voucher_text",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "TRANSFER_ID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "transfer_id",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "INTERIM_VOUCHER",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "interim_voucher",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ROWSTATE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "rowstate",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ROWTYPE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "rowtype",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ROWVERSION",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "rowversion",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_TYPE_REFERENCE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "voucher_type_reference",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ACCOUNTING_YEAR_REFERENCE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "accounting_year_reference",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_NO_REFERENCE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "voucher_no_reference",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_UPDATED",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "voucher_updated",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "VOUCHER_TEXT2",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "voucher_text2",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "MULTI_COMPANY_ID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "multi_company_id",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ENTERED_BY_USER_GROUP",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "entered_by_user_group",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "APPROVAL_DATE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "approval_date",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "APPROVED_BY_USERID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "approved_by_userid",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "APPROVED_BY_USER_GROUP",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "approved_by_user_group",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "FUNCTION_GROUP",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "function_group",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ACCRUL_ID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "accrul_id",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "AMOUNT_METHOD",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "amount_method",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "SIMULATION_VOUCHER",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "simulation_voucher",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "REVENUE_COST_CLEAR_VOUCHER",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "revenue_cost_clear_voucher",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": "@{pipeline().parameters.FACTORY}STG"
+						}
+					}
+				]
+			},
+			{
+				"name": "SOURCE_TO_BLOB",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SetSTGSQL",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": {
+							"value": "@variables('STGSQL_BATH')",
+							"type": "Expression"
+						},
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "IFS_MOD_Source",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "BLOB_BAK",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SOURCE_TO_BLOB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv_bak",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "delete_today",
+				"description": "由于时间戳数仓中的类型为date 类型",
+				"type": "Script",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "AzureSynapseAnalytics",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "Query",
+							"text": {
+								"value": "delete from @{pipeline().parameters.FACTORY}.@{pipeline().parameters.TABLENAME} where rowversion >=  CONVERT(date, dateadd(hh,-32,GETDATE()))",
+								"type": "Expression"
+							}
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			}
+		],
+		"parameters": {
+			"GetMAXDateSQL": {
+				"type": "string",
+				"defaultValue": "SELECT CONVERT(NVARCHAR,ISNULL(max(CAST(ROWVERSION AS DATETIME)) ,'1900-01-01'),20) Batch            FROM [MOD].[VOUCHER_TAB]"
+			},
+			"TABLENAME": {
+				"type": "string",
+				"defaultValue": "VOUCHER_TAB"
+			},
+			"FACTORY": {
+				"type": "string",
+				"defaultValue": "MOD"
+			},
+			"SYSTEM": {
+				"type": "string",
+				"defaultValue": "ifs"
+			},
+			"MERGE": {
+				"type": "string",
+				"defaultValue": "DELETE     FROM [MOD].[VOUCHER_TAB]     WHERE EXISTS(SELECT TOP 1 1                  FROM [MODSTG].[VOUCHER_TAB]                  WHERE [MODSTG].[VOUCHER_TAB].[COMPANY] = [MOD].[VOUCHER_TAB].[COMPANY]                  AND   [MODSTG].[VOUCHER_TAB].[ACCOUNTING_YEAR] = [MOD].[VOUCHER_TAB].[ACCOUNTING_YEAR]                  AND   [MODSTG].[VOUCHER_TAB].[VOUCHER_NO] = [MOD].[VOUCHER_TAB].[VOUCHER_NO]                  AND   [MODSTG].[VOUCHER_TAB].[VOUCHER_TYPE] = [MOD].[VOUCHER_TAB].[VOUCHER_TYPE]                  )"
+			},
+			"STGSQL": {
+				"type": "string",
+				"defaultValue": "select  REPLACE(company, CHR(13) || CHR (10), '')   company,        accounting_year ,        voucher_no ,        REPLACE(voucher_type , CHR(13) || CHR (10), '')   voucher_type ,        TO_CHAR(voucher_date, 'yyyy-mm-dd hh:mi:ss')           voucher_date,        REPLACE(user_group, CHR(13) || CHR (10), '')   user_group,        accounting_period ,        TO_CHAR(date_reg , 'yyyy-mm-dd hh:mi:ss')          date_reg ,        REPLACE(userid, CHR(13) || CHR (10), '')             userid,        REPLACE(correction, CHR(13) || CHR (10), '')         correction,        REPLACE(accounting_text_id, CHR(13) || CHR (10), '') accounting_text_id,        REPLACE(update_error, CHR(13) || CHR (10), '')       update_error,        internal_seq_number ,        REPLACE(voucher_text, CHR(13) || CHR (10), '')       voucher_text,        REPLACE(transfer_id, CHR(13) || CHR (10), '')        transfer_id,        REPLACE(interim_voucher, CHR(13) || CHR (10), '')    interim_voucher,        REPLACE(rowstate, CHR(13) || CHR (10), '')           rowstate,        REPLACE(rowtype, CHR(13) || CHR (10), '')            rowtype,        TO_CHAR(rowversion , 'yyyy-mm-dd hh:mi:ss')          rowversion,        REPLACE(voucher_type_reference, CHR(13) || CHR (10), '')       voucher_type_reference,        accounting_year_reference ,        voucher_no_reference ,        REPLACE(voucher_updated, CHR(13) || CHR (10), '')        voucher_updated,        REPLACE(voucher_text2, CHR(13) || CHR (10), '')          voucher_text2,        REPLACE(multi_company_id, CHR(13) || CHR (10), '')       multi_company_id,        REPLACE(entered_by_user_group, CHR(13) || CHR (10), '')  entered_by_user_group,        TO_CHAR(approval_date , 'yyyy-mm-dd hh:mi:ss')           approval_date ,        REPLACE(approved_by_userid, CHR(13) || CHR (10), '')          approved_by_userid,        REPLACE(approved_by_user_group, CHR(13) || CHR (10), '')      approved_by_user_group,        REPLACE(function_group, CHR(13) || CHR (10), '')              function_group,        REPLACE(accrul_id, CHR(13) || CHR (10), '')                   accrul_id,        REPLACE(amount_method, CHR(13) || CHR (10), '')               amount_method,        REPLACE(simulation_voucher, CHR(13) || CHR (10), '')          simulation_voucher,        REPLACE(revenue_cost_clear_voucher, CHR(13) || CHR (10), '')  revenue_cost_clear_voucher  from IFSAPP.VOUCHER_TAB where TO_CHAR(rowversion, 'yyyy-mm-dd hh:mi:ss') >"
+			}
+		},
+		"variables": {
+			"STGSQL_BATH": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"folder": {
+			"name": "IFS/MODP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T08:58:49Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

@@ -1,0 +1,946 @@
+{
+	"name": "37_CK_N_STOCK_MONTH_REPORT_TAB_ZL",
+	"properties": {
+		"activities": [
+			{
+				"name": "SourceToBLOB",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SetSTGSQL",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": {
+							"value": "@variables('STGSQL_BATH')\n",
+							"type": "Expression"
+						},
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "IFS_CK_Source",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "BLOB_BAK",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SourceToBLOB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv_bak",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "CSV_STG",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "BLOB_BAK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "if   object_id('@{pipeline().parameters.FACTORY}STG.@{pipeline().parameters.TABLENAME}') is not null  \n  truncate table @{pipeline().parameters.FACTORY}STG.@{pipeline().parameters.TABLENAME}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "COMPANY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "company",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CONTRACT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "contract",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "YEAR",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "year",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "MONTH",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "month",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "PRODUCT_TYPE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "product_type",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PART_NO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "part_no",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "FINANCE_TYPE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "finance_type",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CAR_TYPE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "car_type",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "DESCRIPTION",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "description",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CUSTOMER_PART_NO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "customer_part_no",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "VALUE_CODE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "value_code",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "NET_WEIGHT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "net_weight",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "UNIT_MEAS",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "unit_meas",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PRICE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "price",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "LAST_MON_QTY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "last_mon_qty",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "LAST_MON_WEI",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "last_mon_wei",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "LAST_MON_AMO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "last_mon_amo",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CURR_MON_REC_QTY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "curr_mon_rec_qty",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CURR_MON_REC_AMO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "curr_mon_rec_amo",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CURR_MON_OTH_REC_QTY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "curr_mon_oth_rec_qty",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CURR_MON_OTH_REC_AMO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "curr_mon_oth_rec_amo",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CURR_MON_ISS_QTY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "curr_mon_iss_qty",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CURR_MON_ISS_AMO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "curr_mon_iss_amo",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CURR_MON_OTH_ISS_QTY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "curr_mon_oth_iss_qty",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CURR_MON_OTH_ISS_AMO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "curr_mon_oth_iss_amo",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CURR_MON_QTY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "curr_mon_qty",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CURR_MON_WEI",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "curr_mon_wei",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "CURR_MON_AMO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "curr_mon_amo",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "UNUSE_FLAG",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "unuse_flag",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "N_REMARK1",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "n_remark1",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "N_REMARK2",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "n_remark2",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "N_REMARK3",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "n_remark3",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "N_REMARK4",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "n_remark4",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "N_REMARK5",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "n_remark5",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "N_REMARK6",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "n_remark6",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "N_REMARK7",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "n_remark7",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "N_REMARK8",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "n_remark8",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "N_REMARK9",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "n_remark9",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "N_REMARK10",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "n_remark10",
+									"type": "Single",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "ROWVERSION",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "rowversion",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": "@{pipeline().parameters.FACTORY}STG"
+						}
+					}
+				]
+			},
+			{
+				"name": "STG_TO_ODS",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "CSV_STG",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "@{pipeline().parameters.MERGE}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": "@{pipeline().parameters.FACTORY}STG"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "GETMAXBatch",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "delete_2days",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": {
+							"value": "@pipeline().parameters.GetMAXDateSQL\n",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SOURCE_TemPlate",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "SetSTGSQL",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "GETMAXBatch",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "STGSQL_BATH",
+					"value": {
+						"value": "@{pipeline().parameters.STGSQL}'@{activity('GETMAXBatch').output.firstRow.batch}'\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "delete_2days",
+				"description": "由于时间戳数仓中的类型为date 类型,由于执行时间为12点，所以删除前一天的一天",
+				"type": "Script",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "AzureSynapseAnalytics",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "Query",
+							"text": {
+								"value": "delete from @{pipeline().parameters.FACTORY}.@{pipeline().parameters.TABLENAME} where rowversion >=  CONVERT(date, dateadd(hh,-32,GETDATE()))\n\n\n\n",
+								"type": "Expression"
+							}
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			}
+		],
+		"parameters": {
+			"GetMAXDateSQL": {
+				"type": "string",
+				"defaultValue": "SELECT CONVERT(NVARCHAR,ISNULL(max(CAST(ROWVERSION AS DATETIME)) ,'1900-01-01'),20) Batch            FROM [CK].[N_STOCK_MONTH_REPORT_TAB]"
+			},
+			"TABLENAME": {
+				"type": "string",
+				"defaultValue": "N_STOCK_MONTH_REPORT_TAB"
+			},
+			"FACTORY": {
+				"type": "string",
+				"defaultValue": "CK"
+			},
+			"SYSTEM": {
+				"type": "string",
+				"defaultValue": "ifs"
+			},
+			"MERGE": {
+				"type": "string",
+				"defaultValue": "DELETE     FROM [CK].[N_STOCK_MONTH_REPORT_TAB]     WHERE EXISTS(SELECT TOP 1 1                  FROM [CKSTG].[N_STOCK_MONTH_REPORT_TAB]                  WHERE [CKSTG].[N_STOCK_MONTH_REPORT_TAB].[COMPANY] = [CK].[N_STOCK_MONTH_REPORT_TAB].[COMPANY]                  AND   [CKSTG].[N_STOCK_MONTH_REPORT_TAB].[CONTRACT] = [CK].[N_STOCK_MONTH_REPORT_TAB].[CONTRACT]                  AND   [CKSTG].[N_STOCK_MONTH_REPORT_TAB].[YEAR] = [CK].[N_STOCK_MONTH_REPORT_TAB].[YEAR]                  AND   [CKSTG].[N_STOCK_MONTH_REPORT_TAB].[MONTH] = [CK].[N_STOCK_MONTH_REPORT_TAB].[MONTH]                  AND   [CKSTG].[N_STOCK_MONTH_REPORT_TAB].[PRODUCT_TYPE] = [CK].[N_STOCK_MONTH_REPORT_TAB].[PRODUCT_TYPE]                  AND   [CKSTG].[N_STOCK_MONTH_REPORT_TAB].[PART_NO] = [CK].[N_STOCK_MONTH_REPORT_TAB].[PART_NO]                  AND   [CKSTG].[N_STOCK_MONTH_REPORT_TAB].[FINANCE_TYPE] = [CK].[N_STOCK_MONTH_REPORT_TAB].[FINANCE_TYPE]                  AND   [CKSTG].[N_STOCK_MONTH_REPORT_TAB].[CAR_TYPE] = [CK].[N_STOCK_MONTH_REPORT_TAB].[CAR_TYPE]                  )"
+			},
+			"STGSQL": {
+				"type": "string",
+				"defaultValue": "select REPLACE(company, CHR(13) || CHR(10), '') company,        REPLACE(contract, CHR(13) || CHR(10), '') contract,        year,        month,        REPLACE(product_type, CHR(13) || CHR(10), '') product_type,        REPLACE(part_no, CHR(13) || CHR(10), '') part_no,        REPLACE(finance_type, CHR(13) || CHR(10), '') finance_type ,        REPLACE(car_type, CHR(13) || CHR(10), '') car_type,        REPLACE(description, CHR(13) || CHR(10), '') description,        REPLACE(customer_part_no, CHR(13) || CHR(10), '') customer_part_no,        REPLACE(value_code, CHR(13) || CHR(10), '') value_code,        net_weight,        REPLACE(unit_meas, CHR(13) || CHR(10), '') unit_meas,        price,        last_mon_qty,        last_mon_wei,        last_mon_amo,        curr_mon_rec_qty,        curr_mon_rec_amo,        curr_mon_oth_rec_qty,        curr_mon_oth_rec_amo,        curr_mon_iss_qty,        curr_mon_iss_amo,        curr_mon_oth_iss_qty,        curr_mon_oth_iss_amo,        curr_mon_qty,        curr_mon_wei,        curr_mon_amo,        REPLACE(unuse_flag, CHR(13) || CHR(10), '') unuse_flag,        REPLACE(n_remark1, CHR(13) || CHR(10), '') n_remark1,        REPLACE(n_remark2, CHR(13) || CHR(10), '') n_remark2,        REPLACE(n_remark3, CHR(13) || CHR(10), '') n_remark3,        REPLACE(n_remark4, CHR(13) || CHR(10), '') n_remark4,        REPLACE(n_remark5, CHR(13) || CHR(10), '') n_remark5,        n_remark6,        n_remark7,        n_remark8,        n_remark9,        n_remark10,        TO_CHAR(rowversion, 'yyyy-mm-dd hh:mi:ss') rowversion   from IFSAPP.N_STOCK_MONTH_REPORT_TAB  where TO_CHAR(rowversion, 'yyyy-mm-dd hh:mi:ss') >"
+			}
+		},
+		"variables": {
+			"STGSQL_BATH": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"folder": {
+			"name": "IFS/CKP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T08:59:23Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

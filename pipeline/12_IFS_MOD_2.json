@@ -1,0 +1,384 @@
+{
+	"name": "12_IFS_MOD_2",
+	"properties": {
+		"description": "28开始",
+		"activities": [
+			{
+				"name": "13_MOD_WORK_CENTER_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "13_MOD_WORK_CENTER_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "14_MOD_VOUCHER_TYPE_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "13_MOD_WORK_CENTER_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "14_MOD_VOUCHER_TYPE_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "15_MOD_VOUCHER_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "14_MOD_VOUCHER_TYPE_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "15_MOD_VOUCHER_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "16_MOD_VOUCHER_ROW_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "15_MOD_VOUCHER_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "16_MOD_VOUCHER_ROW_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "17_MOD_SUPPLIER_INFO_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "16_MOD_VOUCHER_ROW_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "17_MOD_SUPPLIER_INFO_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "18_MOD_SITE_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "18_MOD_SITE_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "19_MOD_SHOP_ORDER_PROP_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "18_MOD_SITE_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "19_MOD_SHOP_ORDER_PROP_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "20_MOD_SHOP_ORDER_OPERATION_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "19_MOD_SHOP_ORDER_PROP_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "20_MOD_SHOP_ORDER_OPERATION_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "21_MOD_SHOP_ORD_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "20_MOD_SHOP_ORDER_OPERATION_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "21_MOD_SHOP_ORD_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "22_MOD_Sales_Part_Tab",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "21_MOD_SHOP_ORD_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "22_MOD_Sales_Part_Tab",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "23_MOD_RETURN_MATERIAL_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "23_MOD_RETURN_MATERIAL_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "24_MOD_RETURN_MATERIAL_REASON_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "23_MOD_RETURN_MATERIAL_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "24_MOD_RETURN_MATERIAL_REASON_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "25_MOD_RETURN_MATERIAL_LINE_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "24_MOD_RETURN_MATERIAL_REASON_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "25_MOD_RETURN_MATERIAL_LINE_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "26_MOD_PURCHASE_REQUISITIONER_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "25_MOD_RETURN_MATERIAL_LINE_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "26_MOD_PURCHASE_REQUISITIONER_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "27_MOD_PURCHASE_REQUISITION_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "26_MOD_PURCHASE_REQUISITIONER_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "27_MOD_PURCHASE_REQUISITION_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "28_MOD_PURCHASE_REQ_LINE_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "27_MOD_PURCHASE_REQUISITION_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "28_MOD_PURCHASE_REQ_LINE_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "100_MOD_ACCOUNTING_BALANCE_AUTH_ZL",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "22_MOD_Sales_Part_Tab",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "100_MOD_ACCOUNTING_BALANCE_AUTH_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"folder": {
+			"name": "POC_ETL/DISPATCH"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T09:01:56Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

@@ -1,0 +1,258 @@
+{
+	"name": "21_Customer_Model_Mapping",
+	"properties": {
+		"activities": [
+			{
+				"name": "BlobToODS",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "if   object_id('@{pipeline().parameters.SYSTEM}.@{pipeline().parameters.TABLENAME}') is not null  \n  delete  from  @{pipeline().parameters.SYSTEM}.@{pipeline().parameters.TABLENAME} ",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "sale_model",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "sale_model",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "prod_model",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "prod_model",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "retail_model",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "retail_model",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "model",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "model",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "export_model"
+								},
+								"sink": {
+									"name": "export_model"
+								}
+							},
+							{
+								"source": {
+									"name": "IHS_sale_model"
+								},
+								"sink": {
+									"name": "IHS_sale_model"
+								}
+							},
+							{
+								"source": {
+									"name": "IHS_Prod_model"
+								},
+								"sink": {
+									"name": "IHS_Prod_model"
+								}
+							},
+							{
+								"source": {
+									"name": "SOP"
+								},
+								"sink": {
+									"name": "SOP"
+								}
+							},
+							{
+								"source": {
+									"name": "Register"
+								},
+								"sink": {
+									"name": "Register"
+								}
+							},
+							{
+								"source": {
+									"name": "Main_group"
+								},
+								"sink": {
+									"name": "Main_Group"
+								}
+							},
+							{
+								"source": {
+									"name": "proddownload_model"
+								},
+								"sink": {
+									"name": "proddownload_model"
+								}
+							},
+							{
+								"source": {
+									"name": "saledownload_model"
+								},
+								"sink": {
+									"name": "saledownload_model"
+								}
+							},
+							{
+								"source": {
+									"name": "group"
+								},
+								"sink": {
+									"name": "group"
+								}
+							},
+							{
+								"source": {
+									"name": "carseed"
+								},
+								"sink": {
+									"name": "carseed"
+								}
+							},
+							{
+								"source": {
+									"name": "brand"
+								},
+								"sink": {
+									"name": "brand"
+								}
+							},
+							{
+								"source": {
+									"name": "plant"
+								},
+								"sink": {
+									"name": "plant"
+								}
+							},
+							{
+								"source": {
+									"name": "SIOP_model"
+								},
+								"sink": {
+									"name": "SIOP_model"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Commercial_CSV_ZL_3",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@{pipeline().parameters.TABLENAME}.csv",
+								"type": "Expression"
+							},
+							"Split": {
+								"value": "@pipeline().parameters.Split",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"TABLENAME": {
+				"type": "string",
+				"defaultValue": "Customer_Model_Mapping"
+			},
+			"SYSTEM": {
+				"type": "string",
+				"defaultValue": "Commercial"
+			},
+			"Split": {
+				"type": "string",
+				"defaultValue": ","
+			}
+		},
+		"folder": {
+			"name": "Commercial"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T08:59:04Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
