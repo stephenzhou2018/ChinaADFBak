@@ -1,0 +1,144 @@
+{
+	"name": "IFS_Ter",
+	"properties": {
+		"activities": [
+			{
+				"name": "CK_LEVEL_1_FORECAST_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "39_CK_LEVEL_1_FORECAST_TAB_ZL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "CK_INVENTORY_PART_UNIT_COST_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "CK_LEVEL_1_FORECAST_TAB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "44_CK_INVENTORY_PART_UNIT_COST_TAB_QL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "CK_INV_PART_INDISCRETE_CHAR",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "CK_INVENTORY_PART_UNIT_COST_TAB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "49_CK_INV_PART_INDISCRETE_CHAR",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "CK_Inventory_Part_Tab",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "CK_INV_PART_INDISCRETE_CHAR",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "48_CK_Inventory_Part_Tab",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "CK_INVENTORY_TRANSACTION_HIST_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "CK_Inventory_Part_Tab",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "49_CK_INV_PART_INDISCRETE_CHAR",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "CK_SITE_TAB",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "CK_INVENTORY_TRANSACTION_HIST_TAB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "18_CK_SITE_TAB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"folder": {
+			"name": "POC_ETL/Template"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T09:02:03Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

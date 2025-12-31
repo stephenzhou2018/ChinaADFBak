@@ -1,0 +1,62 @@
+{
+	"name": "IFS_ACCOUNTING_QL",
+	"properties": {
+		"activities": [
+			{
+				"name": "UPDATE_MDM",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "MDM_QL",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"SYSTEM": "IFS",
+						"MDMNAME": "Accounting",
+						"date": "20220718",
+						"FACTORY": "mdm"
+					}
+				}
+			},
+			{
+				"name": "MDMTODIM",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "UPDATE_MDM",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dwd].[USP_DimAccounting]"
+				},
+				"linkedServiceName": {
+					"referenceName": "ODS_synapse",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"folder": {
+			"name": "MDM/IFS"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T09:02:00Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

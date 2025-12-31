@@ -1,0 +1,286 @@
+{
+	"name": "01_CustomerForecast_IFS",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy data1",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ExcelSource",
+						"additionalColumns": [
+							{
+								"name": "Data_Load_Time",
+								"value": {
+									"value": "@formatDateTime(addToTime(pipeline().TriggerTime,8,'Hour'),'yyyy-MM-dd HH:mm:ss')",
+									"type": "Expression"
+								}
+							}
+						],
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "delete from @{pipeline().parameters.Factory}.@{pipeline().parameters.Table}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "COMPANY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "COMPANY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "SITE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "SITE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PART_NO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "PART_NO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PRIME_COMMODITY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "PRIME_COMMODITY",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "PRIME_COMMODITY_DESC",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "PRIME_COMMODITY_DESC",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "FORECAST_DATE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "FORECAST_DATE",
+									"type": "DateTime",
+									"physicalType": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "FORECAST_QTY",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "FORECAST_QTY",
+									"type": "Decimal",
+									"physicalType": "decimal",
+									"scale": 4,
+									"precision": 38
+								}
+							},
+							{
+								"source": {
+									"name": "CUSTOMER_NO",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "CUSTOMER_NO",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "CUSTOMER_NAME",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "CUSTOMER_NAME",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "SALES_PRICE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "SALES_PRICE",
+									"type": "Decimal",
+									"physicalType": "decimal",
+									"scale": 4,
+									"precision": 38
+								}
+							},
+							{
+								"source": {
+									"name": "CURRENCY_CODE",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "CURRENCY_CODE",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "SALES_AMOUNT",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "SALES_AMOUNT",
+									"type": "Decimal",
+									"physicalType": "decimal",
+									"scale": 4,
+									"precision": 38
+								}
+							},
+							{
+								"source": {
+									"name": "Data_Load_Time",
+									"type": "String"
+								},
+								"sink": {
+									"name": "Data_Load_Time",
+									"type": "DateTime",
+									"physicalType": "datetime"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Excel_Basic",
+						"type": "DatasetReference",
+						"parameters": {
+							"Folder": {
+								"value": "@pipeline().parameters.Folder",
+								"type": "Expression"
+							},
+							"File": {
+								"value": "@pipeline().parameters.File",
+								"type": "Expression"
+							},
+							"Sheet": {
+								"value": "@pipeline().parameters.Sheet",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.Table",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.Factory",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"concurrency": 1,
+		"parameters": {
+			"Folder": {
+				"type": "string",
+				"defaultValue": "ERP"
+			},
+			"File": {
+				"type": "string",
+				"defaultValue": "CustomerForecast_IFS 1.xlsx"
+			},
+			"Table": {
+				"type": "string",
+				"defaultValue": "CustomerForecast_IFS"
+			},
+			"Factory": {
+				"type": "string",
+				"defaultValue": "ERP"
+			},
+			"Sheet": {
+				"type": "string",
+				"defaultValue": "Sheet1"
+			}
+		},
+		"folder": {
+			"name": "ERP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T08:48:26Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

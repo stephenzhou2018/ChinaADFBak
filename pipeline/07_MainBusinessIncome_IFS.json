@@ -1,0 +1,132 @@
+{
+	"name": "07_MainBusinessIncome_IFS",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy data1",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ExcelSource",
+						"additionalColumns": [
+							{
+								"name": "Data_Load_Time",
+								"value": {
+									"value": "@formatDateTime(addToTime(pipeline().TriggerTime,8,'Hour'),'yyyy-MM-dd HH:mm:ss')",
+									"type": "Expression"
+								}
+							}
+						],
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "delete from @{pipeline().parameters.Factory}.@{pipeline().parameters.Table}_@{pipeline().parameters.System} where Period = @{pipeline().parameters.Date}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"tableOption": "autoCreate",
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Excel_Basic2",
+						"type": "DatasetReference",
+						"parameters": {
+							"Folder": {
+								"value": "@pipeline().parameters.Factory",
+								"type": "Expression"
+							},
+							"Sheet": {
+								"value": "@pipeline().parameters.Sheet",
+								"type": "Expression"
+							},
+							"Date": {
+								"value": "@pipeline().parameters.Date",
+								"type": "Expression"
+							},
+							"System": {
+								"value": "@pipeline().parameters.System",
+								"type": "Expression"
+							},
+							"Table": {
+								"value": "@pipeline().parameters.Table",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@{pipeline().parameters.Table}_@{pipeline().parameters.System}",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.Factory",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"concurrency": 1,
+		"parameters": {
+			"Table": {
+				"type": "string",
+				"defaultValue": "MainBusinessIncome"
+			},
+			"Factory": {
+				"type": "string",
+				"defaultValue": "ERP"
+			},
+			"Sheet": {
+				"type": "string",
+				"defaultValue": "Sheet1"
+			},
+			"System": {
+				"type": "string",
+				"defaultValue": "IFS"
+			},
+			"Date": {
+				"type": "string",
+				"defaultValue": "202401"
+			}
+		},
+		"folder": {
+			"name": "ERP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T08:57:54Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

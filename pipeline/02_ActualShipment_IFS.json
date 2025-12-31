@@ -1,0 +1,123 @@
+{
+	"name": "02_ActualShipment_IFS",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy data1",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ExcelSource",
+						"additionalColumns": [
+							{
+								"name": "Data_Load_Time",
+								"value": {
+									"value": "@formatDateTime(addToTime(pipeline().TriggerTime,8,'Hour'),'yyyy-MM-dd HH:mm:ss')",
+									"type": "Expression"
+								}
+							}
+						],
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "delete from @{pipeline().parameters.Factory}.@{pipeline().parameters.Table}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Excel_Basic",
+						"type": "DatasetReference",
+						"parameters": {
+							"Folder": {
+								"value": "@pipeline().parameters.Folder",
+								"type": "Expression"
+							},
+							"File": {
+								"value": "@pipeline().parameters.File",
+								"type": "Expression"
+							},
+							"Sheet": {
+								"value": "@pipeline().parameters.Sheet",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.Table",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.Factory",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"concurrency": 1,
+		"parameters": {
+			"Folder": {
+				"type": "string",
+				"defaultValue": "ERP"
+			},
+			"File": {
+				"type": "string",
+				"defaultValue": "ActualShipment_IFS.xlsx"
+			},
+			"Table": {
+				"type": "string",
+				"defaultValue": "ActualShipment_IFS"
+			},
+			"Factory": {
+				"type": "string",
+				"defaultValue": "ERP"
+			},
+			"Sheet": {
+				"type": "string",
+				"defaultValue": "Sheet1"
+			}
+		},
+		"folder": {
+			"name": "ERP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T08:57:16Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
