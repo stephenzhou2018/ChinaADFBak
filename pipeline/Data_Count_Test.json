@@ -1,0 +1,310 @@
+{
+	"name": "Data_Count_Test",
+	"properties": {
+		"activities": [
+			{
+				"name": "Count_CK_INVENTORY",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": "SELECT COUNT(*)\nFROM ifsapp.INVENTORY_TRANSACTION_HIST_TAB where dated >= to_date('2024-01-01','YYYY-MM-dd')",
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "IFS_CK_Source",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Count_MOD_INVENTORY",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": "SELECT COUNT(*)\nFROM ifsapp.INVENTORY_TRANSACTION_HIST_TAB where dated >= to_date('2024-01-01','YYYY-MM-dd')",
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "OracleTable_MOD",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Count_Cnedw_CK",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Count_CK_INVENTORY",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": "select Max(Rowversion)  from CK.CUSTOMER_ORDER_TAB",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SOURCE_TemPlate",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Count_Cnedw_MOD",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Count_MOD_INVENTORY",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": "select count(*)  from MOD.CUSTOMER_ORDER_TAB",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SOURCE_TemPlate",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Count_Pub",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OdbcSource",
+						"query": "select count(*) from pub.tr_hist",
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "NEW_QAD",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Count_NEW_QAD",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Count_Pub",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": "select count(*)  from NEW_QAD.tr_hist",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SOURCE_TemPlate",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Count_CK_GEN_LED",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Count_Cnedw_CK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": "SELECT COUNT(*)\nFROM ifsapp.GEN_LED_VOUCHER_ROW_UNION_QRY where accounting_year = 2024 ",
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "IFS_CK_Source",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Count_MOD_GEN_LED",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Count_Cnedw_MOD",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": "SELECT COUNT(*)\nFROM ifsapp.GEN_LED_VOUCHER_ROW_UNION_QRY where accounting_year = 2024 ",
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "IFS_MOD_Source",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "CK_SHOP_ORD_TAB",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": "select count(*) from  ifsapp.SHOP_ORD_TAB",
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "IFS_CK_Source",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "MOD_SHOP_ORD_TAB",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "CK_SHOP_ORD_TAB",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": "select count(*) from  ifsapp.SHOP_ORD_TAB",
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "IFS_MOD_Source",
+						"type": "DatasetReference"
+					}
+				}
+			}
+		],
+		"variables": {
+			"STGSQL_BATH": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"folder": {
+			"name": "IFS/CKP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T09:01:15Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
