@@ -1,0 +1,396 @@
+{
+	"name": "qad_stock",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Metadata1",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "Binary1",
+						"type": "DatasetReference",
+						"parameters": {
+							"Folder": "Temp/Stock/OLD_QAD",
+							"File": {
+								"value": "*@{formatDateTime(addToTime(addToTime(pipeline().TriggerTime,8,'hour'),-1,'Month'),'yyMM')}*.csv",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobStorageReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Metadata1').output.childItems",
+						"type": "Expression"
+					},
+					"batchCount": 5,
+					"activities": [
+						{
+							"name": "Copy data1",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "data_month",
+											"value": {
+												"value": "@substring(item().name,indexof(item().name,'2'),6)",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "company",
+											"value": {
+												"value": "@substring(item().name,0,sub(indexof(item().name,'2'),0))",
+												"type": "Expression"
+											}
+										}
+									],
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "SqlDWSink",
+									"writeBehavior": "Insert",
+									"sqlWriterUseTableLock": false,
+									"tableOption": "autoCreate",
+									"disableMetricsCollection": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"name": "Site",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Site",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "Location",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Location",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "Item Number",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Item Number",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "Description",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Description",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "Line",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Line",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "ABC",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "ABC",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "Qty On Hand",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Qty On Hand",
+												"type": "Double",
+												"physicalType": "float"
+											}
+										},
+										{
+											"source": {
+												"name": "UM",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "UM",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "GL Cost",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "GL Cost",
+												"type": "Double",
+												"physicalType": "float"
+											}
+										},
+										{
+											"source": {
+												"name": "Ext GL Cost",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Ext GL Cost",
+												"type": "Double",
+												"physicalType": "float"
+											}
+										},
+										{
+											"source": {
+												"name": "Inv_acct",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Inv_acct",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "Material",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Material",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "Labor",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Labor",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "Burden",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Burden",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "Duty",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Duty",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "Freight",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Freight",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "Tax Reba",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Common",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "Subcontract",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Subcontract",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "data_month",
+												"type": "String"
+											},
+											"sink": {
+												"name": "data_month",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"name": "company",
+												"type": "String"
+											},
+											"sink": {
+												"name": "company",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										}
+									],
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "csv_basic_sep2",
+									"type": "DatasetReference",
+									"parameters": {
+										"Container": "datalakedata",
+										"Folder": "Temp/Stock/OLD_QAD",
+										"File": {
+											"value": "@item().name",
+											"type": "Expression"
+										},
+										"Sep": ",",
+										"Encoding": "GB2312"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "AzureSynapseAnalyticsODS",
+									"type": "DatasetReference",
+									"parameters": {
+										"TABLENAME": "stock02",
+										"FACTORY": "test"
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "TEST"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T09:01:35Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

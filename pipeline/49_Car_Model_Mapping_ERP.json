@@ -1,0 +1,264 @@
+{
+	"name": "49_Car_Model_Mapping_ERP",
+	"properties": {
+		"activities": [
+			{
+				"name": "Wait1",
+				"type": "Wait",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"waitTimeInSeconds": 10
+				}
+			},
+			{
+				"name": "CSV_ODS",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Wait1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"additionalColumns": [
+							{
+								"name": "Data_Load_Time",
+								"value": {
+									"value": "@formatDateTime(addToTime(pipeline().TriggerTime,8,'Hour'),'yyyy-MM-dd HH:mm:ss')",
+									"type": "Expression"
+								}
+							}
+						],
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "truncate table @{pipeline().parameters.FACTORY}.@{pipeline().parameters.TABLENAME}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "主机厂",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "group_cn",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "品牌",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "band_cn",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "model",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "model",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "描述",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "description",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "SIOP_model",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "SIOP_Model",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "QAD车型",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "ERP_Model",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "QAD物料号",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "ERP_Part",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "QAD工厂",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "ERP_Plant",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "QAD客户代码",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "ERP_Customer",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "Parts per Vehicle",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "Parts_Per_Vehicle",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "Data_Load_Time",
+									"type": "String"
+								},
+								"sink": {
+									"name": "Data_Load_Time",
+									"type": "DateTime",
+									"physicalType": "datetime"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Csv_Basic",
+						"type": "DatasetReference",
+						"parameters": {
+							"Container": "datalakedata",
+							"Folder": {
+								"value": "@{pipeline().parameters.FACTORY}",
+								"type": "Expression"
+							},
+							"File": {
+								"value": "@pipeline().parameters.sourceFile",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@{pipeline().parameters.FACTORY}",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"concurrency": 1,
+		"parameters": {
+			"FACTORY": {
+				"type": "string",
+				"defaultValue": "Commercial"
+			},
+			"TABLENAME": {
+				"type": "string",
+				"defaultValue": "Car_Model_Mapping_ERP"
+			},
+			"sourceFile": {
+				"type": "string",
+				"defaultValue": "1"
+			}
+		},
+		"folder": {
+			"name": "Commercial"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T09:00:22Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

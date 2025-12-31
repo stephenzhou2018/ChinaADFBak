@@ -1,0 +1,177 @@
+{
+	"name": "100_MOD_ACCOUNTING_BALANCE_AUTH_2024",
+	"properties": {
+		"description": "还需要修改",
+		"activities": [
+			{
+				"name": "SourceToBLOB",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": "   select  COMPANY ,\n\tACCOUNTING_YEAR ,\n\tACCOUNTING_PERIOD ,\n\tYEAR_PERIOD ,\n\tYEAR_PERIOD_KEY  ,\n\tPOSTING_COMBINATION_ID  ,\n\tSIMULATION_VOUCHER ,\n\tACCOUNT  ,\n\tACCOUNT_DESC ,\n\tCODE_B ,\n\tCODE_B_DESC  ,\n\tCODE_C ,\n\tCODE_C_DESC  ,\n\tCODE_D ,\n\tCODE_D_DESC  ,\n\tCODE_E ,\n\tCODE_E_DESC ,\n\tCODE_F ,\n\tCODE_F_DESC ,\n\tCODE_G ,\n\tCODE_G_DESC ,\n\tCODE_H ,\n\tCODE_H_DESC ,\n\tCODE_I ,\n\tCODE_I_DESC ,\n\tCODE_J ,\n\tCODE_J_DESC ,\n\tDEBET_BALANCE  ,\n\tCREDIT_BALANCE   ,\n\tAMOUNT_BALANCE   ,\n\tCURR_DEBET_BALANCE   ,\n\tCURR_CREDIT_BALANCE   ,\n\tCURR_AMOUNT_BALANCE   ,\n\tQTY_BALANCE  ,\n\tSTRUCTURE_ID ,\n\tSTRUCT_LEVEL ,\n\tSTRUCT_NODE ,\n\tTHIRD_CURRENCY_DEBIT_BALANCE ,\n\tTHIRD_CURRENCY_CREDIT_BALANCE  ,\n\tTHIRD_CURRENCY_AMOUNT_BALANCE  ,\n\tOBJID  ,\n\t TO_TIMESTAMP(\n         OBJVERSION,\n         'YYYYMMDDHH24MISS'\n       ) as OBJVERSION  \n\n\tfrom IFSapp.ACCOUNTING_BALANCE_AUTH\n\twhere accounting_year > 2022\n",
+						"partitionOption": "None",
+						"convertDecimalToInteger": false,
+						"queryTimeout": "02:00:00"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "IFS_MOD_Source",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "BlobToODS",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SourceToBLOB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": "@pipeline().parameters.FACTORY",
+							"TABLENAME": "@pipeline().parameters.TABLENAME",
+							"SYSTEM": "@pipeline().parameters.SYSTEM"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"TABLENAME": {
+				"type": "string",
+				"defaultValue": "ACCOUNTING_BALANCE_AUTH"
+			},
+			"FACTORY": {
+				"type": "string",
+				"defaultValue": "MOD"
+			},
+			"SYSTEM": {
+				"type": "string",
+				"defaultValue": "ifs"
+			}
+		},
+		"variables": {
+			"STGSQL_BATH": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"folder": {
+			"name": "IFS/MODP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T08:58:27Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

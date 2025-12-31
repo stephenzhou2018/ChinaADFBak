@@ -1,0 +1,428 @@
+{
+	"name": "64_CK_Customer_Order_Line_Tab",
+	"properties": {
+		"activities": [
+			{
+				"name": "SourceToBLOB",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SetSTGSQL",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"oracleReaderQuery": {
+							"value": "@variables('STGSQL_BATH')",
+							"type": "Expression"
+						},
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "IFS_CK_Source",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "CSV_STG",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "BLOB_BAK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "if   object_id('@{pipeline().parameters.FACTORY}STG.@{pipeline().parameters.TABLENAME}') is not null  \n  truncate table @{pipeline().parameters.FACTORY}STG.@{pipeline().parameters.TABLENAME}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"enableSkipIncompatibleRow": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": "@pipeline().parameters.FACTORY",
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@{pipeline().parameters.FACTORY}STG",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "STGToODS",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "CSV_STG",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "@{pipeline().parameters.MERGE}",
+							"type": "Expression"
+						},
+						"writeBehavior": "Insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": "@pipeline().parameters.TABLENAME",
+							"FACTORY": {
+								"value": "@{pipeline().parameters.FACTORY}STG",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseAnalyticsODS",
+						"type": "DatasetReference",
+						"parameters": {
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "GETMAXBatch",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": {
+							"value": "@pipeline().parameters.GetMAXDateSQL",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SOURCE_TemPlate",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "SetSTGSQL",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "GETMAXBatch",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "STGSQL_BATH",
+					"value": {
+						"value": "@{pipeline().parameters.STGSQL}'@{activity('GETMAXBatch').output.firstRow.batch}'",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "BLOB_BAK",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SourceToBLOB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "outfile_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "outfile_csv_bak",
+						"type": "DatasetReference",
+						"parameters": {
+							"FACTORY": {
+								"value": "@pipeline().parameters.FACTORY",
+								"type": "Expression"
+							},
+							"TABLENAME": {
+								"value": "@pipeline().parameters.TABLENAME",
+								"type": "Expression"
+							},
+							"SYSTEM": {
+								"value": "@pipeline().parameters.SYSTEM",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"GetMAXDateSQL": {
+				"type": "string",
+				"defaultValue": " SELECT CONVERT(NVARCHAR,ISNULL(max(CAST(ROWVERSION AS DATETIME)) ,'1900-01-01'),20) Batch FROM [CK].[CUSTOMER_ORDER_LINE_TAB]"
+			},
+			"TABLENAME": {
+				"type": "string",
+				"defaultValue": "CUSTOMER_ORDER_LINE_TAB"
+			},
+			"FACTORY": {
+				"type": "string",
+				"defaultValue": "CK"
+			},
+			"SYSTEM": {
+				"type": "string",
+				"defaultValue": "ifs"
+			},
+			"MERGE": {
+				"type": "string",
+				"defaultValue": " DELETE FROM [CK].[CUSTOMER_ORDER_LINE_TAB]      WHERE EXISTS  (     SELECT TOP 1 1      FROM [CKSTG].[CUSTOMER_ORDER_LINE_TAB]       WHERE  [CKSTG].[CUSTOMER_ORDER_LINE_TAB].[ORDER_NO] = [CK].[CUSTOMER_ORDER_LINE_TAB].[ORDER_NO]  AND [CKSTG].[CUSTOMER_ORDER_LINE_TAB].[LINE_NO] = [CK].[CUSTOMER_ORDER_LINE_TAB].[LINE_NO]  AND [CKSTG].[CUSTOMER_ORDER_LINE_TAB].[REL_NO] = [CK].[CUSTOMER_ORDER_LINE_TAB].[REL_NO]  AND [CKSTG].[CUSTOMER_ORDER_LINE_TAB].[LINE_ITEM_NO] = [CK].[CUSTOMER_ORDER_LINE_TAB].[LINE_ITEM_NO])"
+			},
+			"STGSQL": {
+				"type": "string",
+				"defaultValue": "select ORDER_NO, LINE_NO, REL_NO, LINE_ITEM_NO, CUSTOMER_NO, REPLACE(CATALOG_NO, CHR (13) || CHR (10), '')  CATALOG_NO, CONTRACT, PRE_ACCOUNTING_ID, BONUS_BASIS, BONUS_VALUE, NOTE_ID, REPLACE(ORDER_CODE, CHR (13) || CHR (10), '')  ORDER_CODE, LINE_TOTAL_QTY, REPLACE(PART_NO, CHR (13) || CHR (10), '')  PART_NO, LINE_TOTAL_WEIGHT, REPLACE(NOTE_TEXT, CHR (13) || CHR (10), '')  NOTE_TEXT, ORDER_DISCOUNT, REPLACE(SALES_UNIT_MEAS, CHR (13) || CHR (10), '')  SALES_UNIT_MEAS, PRICE_CONV_FACTOR, BASE_SALE_UNIT_PRICE, BUY_QTY_DUE, REPLACE(CATALOG_DESC, CHR (13) || CHR (10), '')  CATALOG_DESC, QTY_TO_SHIP, REPLACE(CATALOG_TYPE, CHR (13) || CHR (10), '')  CATALOG_TYPE, CONV_FACTOR, COST, REPLACE(DELIVERY_TYPE, CHR (13) || CHR (10), '')  DELIVERY_TYPE, TO_CHAR(DATE_ENTERED,'yyyy-mm-dd hh:mi:ss') DATE_ENTERED, DISCOUNT, TO_CHAR(PLANNED_DELIVERY_DATE,'yyyy-mm-dd hh:mi:ss') PLANNED_DELIVERY_DATE, TO_CHAR(SUPPLY_SITE_DUE_DATE,'yyyy-mm-dd hh:mi:ss') SUPPLY_SITE_DUE_DATE, TO_CHAR(PLANNED_DUE_DATE,'yyyy-mm-dd hh:mi:ss') PLANNED_DUE_DATE, TO_CHAR(PROMISED_DELIVERY_DATE,'yyyy-mm-dd hh:mi:ss') PROMISED_DELIVERY_DATE, QTY_ASSIGNED, QTY_INVOICED, QTY_ON_ORDER, QTY_RETURNED, QTY_SHIPDIFF, QTY_SHIPPED, TO_CHAR(REAL_SHIP_DATE,'yyyy-mm-dd') REAL_SHIP_DATE, QTY_SHORT, REVISED_QTY_DUE, SALE_UNIT_PRICE, REPLACE(SUPPLY_CODE, CHR (13) || CHR (10), '')  SUPPLY_CODE, TO_CHAR(WANTED_DELIVERY_DATE,'yyyy-mm-dd hh:mi:ss') WANTED_DELIVERY_DATE, QTY_PICKED, VENDOR_NO, FEE_CODE, CURRENCY_RATE, REPLACE(CUSTOMER_PART_NO, CHR (13) || CHR (10), '')  CUSTOMER_PART_NO, REPLACE(CUSTOMER_PART_UNIT_MEAS, CHR (13) || CHR (10), '')  CUSTOMER_PART_UNIT_MEAS, CUSTOMER_PART_CONV_FACTOR, CUSTOMER_PART_BUY_QTY, REPLACE(CONSIGNMENT_STOCK, CHR (13) || CHR (10), '')  CONSIGNMENT_STOCK, CLOSE_TOLERANCE, REPLACE(PRICE_LIST_NO, CHR (13) || CHR (10), '')  PRICE_LIST_NO, REPLACE(CHARGED_ITEM, CHR (13) || CHR (10), '')  CHARGED_ITEM, REPLACE(DEMAND_ORDER_REF1, CHR (13) || CHR (10), '')  DEMAND_ORDER_REF1, DEMAND_ORDER_REF2, DEMAND_ORDER_REF3, DEMAND_ORDER_REF4, REPLACE(DEMAND_CODE, CHR (13) || CHR (10), '')  DEMAND_CODE, DOP_CONNECTION, WARRANTY, REPLACE(CREATE_SM_OBJECT_OPTION, CHR (13) || CHR (10), '')  CREATE_SM_OBJECT_OPTION, TO_CHAR(PLANNED_SHIP_DATE,'yyyy-mm-dd') PLANNED_SHIP_DATE, REPLACE(PLANNED_SHIP_PERIOD, CHR (13) || CHR (10), '')  PLANNED_SHIP_PERIOD, DEFAULT_ADDR_FLAG, ADDR_FLAG, SHIP_ADDR_NO, REPLACE(ROUTE_ID, CHR (13) || CHR (10), '')  ROUTE_ID, REPLACE(FORWARD_AGENT_ID, CHR (13) || CHR (10), '')  FORWARD_AGENT_ID, SHIP_VIA_CODE, REPLACE(SHIP_VIA_DESC, CHR (13) || CHR (10), '')  SHIP_VIA_DESC, DELIVERY_TERMS, REPLACE(DELIVERY_TERMS_DESC, CHR (13) || CHR (10), '')  DELIVERY_TERMS_DESC, DELIVERY_LEADTIME, REPLACE(DISTRICT_CODE, CHR (13) || CHR (10), '')  DISTRICT_CODE, REPLACE(REGION_CODE, CHR (13) || CHR (10), '')  REGION_CODE, DESIRED_QTY, REPLACE(PURCHASE_PART_NO, CHR (13) || CHR (10), '')  PURCHASE_PART_NO, REPLACE(STAGED_BILLING, CHR (13) || CHR (10), '')  STAGED_BILLING, VAT, REPLACE(ORIGINAL_PART_NO, CHR (13) || CHR (10), '')  ORIGINAL_PART_NO, REPLACE(SM_CONNECTION, CHR (13) || CHR (10), '')  SM_CONNECTION, SUP_SM_CONTRACT, REPLACE(SUP_SM_OBJECT, CHR (13) || CHR (10), '')  SUP_SM_OBJECT, PART_PRICE, REPLACE(PRICE_SOURCE, CHR (13) || CHR (10), '')  PRICE_SOURCE, CALC_CHAR_PRICE, CHAR_PRICE, PRICE_FREEZE, REPLACE(DOCK_CODE, CHR (13) || CHR (10), '')  DOCK_CODE, REPLACE(SUB_DOCK_CODE, CHR (13) || CHR (10), '')  SUB_DOCK_CODE, REPLACE(REF_ID, CHR (13) || CHR (10), '')  REF_ID, REPLACE(LOCATION_NO, CHR (13) || CHR (10), '')  LOCATION_NO, REPLACE(CONFIGURATION_ID, CHR (13) || CHR (10), '')  CONFIGURATION_ID, TO_CHAR(PRICE_EFFECTIVITY_DATE,'yyyy-mm-dd') PRICE_EFFECTIVITY_DATE, CONFIGURED_LINE_PRICE_ID, TO_CHAR(EARLIEST_START_DATE,'yyyy-mm-dd hh:mi:ss') EARLIEST_START_DATE, REPLACE(CTP_PLANNED, CHR (13) || CHR (10), '')  CTP_PLANNED, REPLACE(JOB_ID, CHR (13) || CHR (10), '')  JOB_ID, CUST_WARRANTY_ID, REPLACE(PRICE_SOURCE_ID, CHR (13) || CHR (10), '')  PRICE_SOURCE_ID, REPLACE(INTRASTAT_EXEMPT, CHR (13) || CHR (10), '')  INTRASTAT_EXEMPT, REPLACE(PRICE_UNIT_MEAS, CHR (13) || CHR (10), '')  PRICE_UNIT_MEAS, ADDITIONAL_DISCOUNT, REPLACE(CONDITION_CODE, CHR (13) || CHR (10), '')  CONDITION_CODE, REPLACE(PART_OWNERSHIP, CHR (13) || CHR (10), '')  PART_OWNERSHIP, REPLACE(OWNING_CUSTOMER_NO, CHR (13) || CHR (10), '')  OWNING_CUSTOMER_NO, REPLACE(EXCHANGE_ITEM, CHR (13) || CHR (10), '')  EXCHANGE_ITEM, REPLACE(SUPPLY_SITE_RESERVE_TYPE, CHR (13) || CHR (10), '')  SUPPLY_SITE_RESERVE_TYPE, ORIGINATING_REL_NO, ORIGINATING_LINE_ITEM_NO, REPLACE(RELEASE_PLANNING, CHR (13) || CHR (10), '')  RELEASE_PLANNING, SUPPLIER_SHIP_VIA_TRANSIT, REPLACE(SUPPLIER_SHIP_VIA_TRANSIT_DESC, CHR (13) || CHR (10), '')  SUPPLIER_SHIP_VIA_TRANSIT_DESC, SUPPLY_SITE, REPLACE(CANCEL_REASON, CHR (13) || CHR (10), '')  CANCEL_REASON, ROWSTATE, TO_CHAR(ROWVERSION,'yyyy-mm-dd hh:mi:ss') ROWVERSION, SALE_UNIT_PRICE_WITH_TAX, TO_CHAR(SALES_DATE,'yyyy-mm-dd') SALES_DATE, REPLACE(ACR_WITH_SALES_POSTING, CHR (13) || CHR (10), '')  ACR_WITH_SALES_POSTING, SALES_AMOUNT, INVOICE_AMOUNT, PREL_VOUCHER_NO, REPLACE(N_CUST_RELEASE_NO, CHR (13) || CHR (10), '')  N_CUST_RELEASE_NO, TO_CHAR(N_PRICE_DATE,'yyyy-mm-dd hh:mi:ss') N_PRICE_DATE, N_PRICE_FLAG, N_COMPARE_FLAG, N_CONFIRM_FLAG, REPLACE(SHIP_TIME, CHR (13) || CHR (10), '')  SHIP_TIME, REPLACE(N_RECEIVE_NO, CHR (13) || CHR (10), '')  N_RECEIVE_NO, REPLACE(C_BACK_ORDER_LINE_NO, CHR (13) || CHR (10), '')  C_BACK_ORDER_LINE_NO, REPLACE(C_FINAL_CUSTOMER, CHR (13) || CHR (10), '')  C_FINAL_CUSTOMER, REPLACE(PO_LINE_INFO, CHR (13) || CHR (10), '')  PO_LINE_INFO from IFSAPP.CUSTOMER_ORDER_LINE_TAB  where TO_CHAR(ROWVERSION, 'yyyy-mm-dd hh:mi:ss') >"
+			}
+		},
+		"variables": {
+			"STGSQL_BATH": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"folder": {
+			"name": "IFS/CKP"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-12-29T09:00:52Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
