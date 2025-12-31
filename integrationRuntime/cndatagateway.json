@@ -1,0 +1,6 @@
+{
+	"name": "cndatagateway",
+	"properties": {
+		"type": "SelfHosted"
+	}
+}
