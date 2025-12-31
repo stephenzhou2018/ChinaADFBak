@@ -1,0 +1,9 @@
+{
+	"name": "ChinaADFBackup",
+	"location": "eastasia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "2847e60e-6574-44b3-849b-17add781bc12",
+		"tenantId": "a6a681e0-1c24-46eb-a657-e25259ad9536"
+	}
+}
