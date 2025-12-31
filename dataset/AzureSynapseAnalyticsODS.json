@@ -1,0 +1,144 @@
+{
+	"name": "AzureSynapseAnalyticsODS",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSynapseAnalytics",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"TABLENAME": {
+				"type": "string"
+			},
+			"FACTORY": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlDWTable",
+		"schema": [
+			{
+				"name": "column1",
+				"type": "varchar"
+			},
+			{
+				"name": "column2",
+				"type": "varchar"
+			},
+			{
+				"name": "column3",
+				"type": "varchar"
+			},
+			{
+				"name": "column4",
+				"type": "varchar"
+			},
+			{
+				"name": "column5",
+				"type": "nvarchar"
+			},
+			{
+				"name": "column6",
+				"type": "varchar"
+			},
+			{
+				"name": "column7",
+				"type": "varchar"
+			},
+			{
+				"name": "column8",
+				"type": "varchar"
+			},
+			{
+				"name": "column9",
+				"type": "varchar"
+			},
+			{
+				"name": "column10",
+				"type": "varchar"
+			},
+			{
+				"name": "column11",
+				"type": "varchar"
+			},
+			{
+				"name": "column12",
+				"type": "varchar"
+			},
+			{
+				"name": "column13",
+				"type": "varchar"
+			},
+			{
+				"name": "column14",
+				"type": "varchar"
+			},
+			{
+				"name": "column15",
+				"type": "varchar"
+			},
+			{
+				"name": "column16",
+				"type": "varchar"
+			},
+			{
+				"name": "column17",
+				"type": "varchar"
+			},
+			{
+				"name": "column18",
+				"type": "varchar"
+			},
+			{
+				"name": "column19",
+				"type": "varchar"
+			},
+			{
+				"name": "column20",
+				"type": "varchar"
+			},
+			{
+				"name": "column21",
+				"type": "varchar"
+			},
+			{
+				"name": "column22",
+				"type": "varchar"
+			},
+			{
+				"name": "column23",
+				"type": "varchar"
+			},
+			{
+				"name": "column24",
+				"type": "varchar"
+			},
+			{
+				"name": "column25",
+				"type": "varchar"
+			},
+			{
+				"name": "column26",
+				"type": "varchar"
+			},
+			{
+				"name": "column27",
+				"type": "varchar"
+			},
+			{
+				"name": "column28",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": {
+				"value": "@dataset().FACTORY",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().TABLENAME",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
